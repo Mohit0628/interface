@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen } from "@testing-library/react"
+import { act, cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { useWalletStore } from "../store/wallet-store"
 import { ConnectButton } from "./ConnectButton"
@@ -109,7 +109,9 @@ describe("ConnectButton - Disconnected State", () => {
       const dialog = screen.getByRole("dialog")
       expect(dialog).toBeInTheDocument()
 
-      const dialogTitle = screen.getByRole("heading", { name: "Connect Wallet" })
+      const dialogTitle = screen.getByRole("heading", {
+        name: "Connect Wallet",
+      })
       expect(dialogTitle).toBeInTheDocument()
     })
 
@@ -127,7 +129,7 @@ describe("ConnectButton - Disconnected State", () => {
 
       // Dialog description should be present
       expect(
-        screen.getByText("Choose a supported Stellar wallet to continue."),
+        screen.getByText("Choose a supported Stellar wallet to continue.")
       ).toBeInTheDocument()
     })
 
@@ -141,8 +143,21 @@ describe("ConnectButton - Disconnected State", () => {
       // Mobile wallet section should be visible
       expect(screen.getByText("Use Mobile Wallet")).toBeInTheDocument()
       expect(
-        screen.getByText(/Scan to connect from a mobile wallet/),
+        screen.getByText(/Scan to connect from a mobile wallet/)
       ).toBeInTheDocument()
+    })
+
+    it("should stagger the wallet list on open", async () => {
+      const user = userEvent.setup()
+      render(<ConnectButton />)
+
+      await user.click(screen.getByRole("button", { name: /Connect wallet/i }))
+
+      const rows = Array.from(document.querySelectorAll(".so4-wallet-row"))
+      expect(rows).toHaveLength(3)
+      expect(rows[0]).toHaveStyle({ "--wallet-stagger": "0" })
+      expect(rows[1]).toHaveStyle({ "--wallet-stagger": "1" })
+      expect(rows[2]).toHaveStyle({ "--wallet-stagger": "2" })
     })
   })
 
@@ -166,15 +181,14 @@ describe("ConnectButton - Disconnected State", () => {
       expect(button).toBeDisabled()
     })
 
-    it("should show spinner when connecting", () => {
+    it("should show a pulsing wallet icon when connecting", () => {
       useWalletStore.setState({ status: "connecting" })
 
       render(<ConnectButton />)
 
-      // Spinner SVG should be rendered
-      const svg = screen.getByRole("button").querySelector("svg")
-      expect(svg).toBeInTheDocument()
-      expect(svg).toHaveClass("animate-spin")
+      const button = screen.getByRole("button", { name: /Connecting wallet/i })
+      expect(button.querySelector(".so4-wallet-pulse")).toBeInTheDocument()
+      expect(button).toHaveTextContent("Connecting")
     })
 
     it("should not open modal when connecting", async () => {
@@ -261,6 +275,26 @@ describe("ConnectButton - Disconnected State", () => {
       // Account badge should be rendered instead
       expect(screen.getByText(/GAAAAA/)).toBeInTheDocument()
     })
+
+    it("should morph the connecting pill into the account badge", () => {
+      const { rerender } = render(<ConnectButton />)
+
+      act(() => {
+        useWalletStore.setState({ status: "connecting" })
+      })
+      rerender(<ConnectButton />)
+
+      act(() => {
+        useWalletStore.setState({
+          status: "connected",
+          address: fakeWalletAddress,
+        })
+      })
+      rerender(<ConnectButton />)
+
+      const pill = document.querySelector('[data-wallet-state="connected"]')
+      expect(pill).toHaveClass("so4-wallet-pill")
+    })
   })
 
   describe("Keyboard Shortcuts", () => {
@@ -277,7 +311,7 @@ describe("ConnectButton - Disconnected State", () => {
         expect.objectContaining({
           key: "k",
           enabled: true,
-        }),
+        })
       )
     })
 
@@ -293,7 +327,7 @@ describe("ConnectButton - Disconnected State", () => {
       expect(useKeyboardShortcut).toHaveBeenCalledWith(
         expect.objectContaining({
           enabled: false,
-        }),
+        })
       )
     })
 
@@ -312,7 +346,7 @@ describe("ConnectButton - Disconnected State", () => {
       expect(useKeyboardShortcut).toHaveBeenCalledWith(
         expect.objectContaining({
           enabled: false,
-        }),
+        })
       )
     })
   })
@@ -324,7 +358,9 @@ describe("ConnectButton - Disconnected State", () => {
       expect(state.status).toBe("disconnected")
 
       render(<ConnectButton />)
-      expect(screen.getByRole("button", { name: /Connect wallet/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: /Connect wallet/i })
+      ).toBeInTheDocument()
     })
 
     it("test B: should not have state from test A", () => {
@@ -334,14 +370,18 @@ describe("ConnectButton - Disconnected State", () => {
       expect(state.status).toBe("disconnected")
 
       render(<ConnectButton />)
-      expect(screen.getByRole("button", { name: /Connect wallet/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: /Connect wallet/i })
+      ).toBeInTheDocument()
     })
 
     it("should not render connected UI after render if store changes", () => {
       const { rerender } = render(<ConnectButton />)
 
       // Initially should show connect button
-      expect(screen.getByRole("button", { name: /Connect wallet/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: /Connect wallet/i })
+      ).toBeInTheDocument()
 
       // Update store to connected state
       useWalletStore.setState({
@@ -354,7 +394,7 @@ describe("ConnectButton - Disconnected State", () => {
 
       // Now should show account badge instead
       expect(
-        screen.queryByRole("button", { name: /Connect wallet/i }),
+        screen.queryByRole("button", { name: /Connect wallet/i })
       ).not.toBeInTheDocument()
       expect(screen.getByText(/GAAAAA/)).toBeInTheDocument()
     })

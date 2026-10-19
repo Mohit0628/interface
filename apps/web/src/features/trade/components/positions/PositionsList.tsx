@@ -129,7 +129,7 @@ export function PositionsList({ onSelectPosition }: Props) {
     {
       id: "mark",
       header: "Mark",
-      accessor: (p) => <Numeric value={p.markPrice} format="usd" role="neutral" />,
+      accessor: (p) => <Numeric value={p.markPrice} format="usd" role="neutral" rolling />,
     },
     {
       id: "liq",
@@ -176,9 +176,9 @@ export function PositionsList({ onSelectPosition }: Props) {
         const role = p.pnlAfterFees >= 0 ? "positive" : "negative"
         return (
           <>
-            <Numeric value={p.pnlAfterFees} format="usd" role={role} />
+            <Numeric value={p.pnlAfterFees} format="usd" role={role} rolling />
             {" "}
-            <Numeric value={p.pnlPercent} format="pct" role={role} />
+            <Numeric value={p.pnlPercent} format="pct" role={role} rolling />
           </>
         )
       },
@@ -276,6 +276,7 @@ export function PositionsList({ onSelectPosition }: Props) {
       <DataTable
         columns={columns}
         data={positions}
+        animateRows
         isLoading={isLoading}
         emptyMessage="No open positions"
         emptyAction={

@@ -15,9 +15,6 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api.binance.com/**", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
   )
-  await page.route("**/oracle.biscotti-proxy-worker.workers.dev/**", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
-  )
 })
 
 test("pools page is reachable with no external network dependency", async ({ page }) => {

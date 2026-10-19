@@ -3,6 +3,12 @@ export { parseSorobanError, ORDER_EXECUTION_FROZEN_MESSAGE } from "./errors"
 export { i128ToScVal } from "./scval"
 export { fromProtocolAmount, toProtocolAmount } from "./scaling"
 export { referralCodeToScVal, scValToReferralCode } from "./soroban/referral-code"
+export {
+  type ContractAddresses,
+  type SupportedNetwork,
+  CONTRACT_DEPLOYMENTS,
+  getContractAddresses,
+} from "./deployments"
 
 export {
   ExchangeRouterClient,

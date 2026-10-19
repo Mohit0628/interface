@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { HamburgerButton, SiteLogo, useMobileMenu } from "../nav/primitives"
+import { useScrollHeader } from "@/shared/hooks/useScrollHeader"
 
 const NAV_LINKS: Array<{
   label: string
@@ -38,6 +39,7 @@ export function HeaderMenu() {
   const triggerRef = useRef<HTMLButtonElement>(null)
   const desktopNavRef = useRef<HTMLUListElement>(null)
   const [instant, setInstant] = useState(false)
+  const { scrolled, hidden } = useScrollHeader()
   const restoreTrigger = useCallback(() => {
     setInstant(true)
     triggerRef.current?.focus()
@@ -98,53 +100,65 @@ export function HeaderMenu() {
   }, [open])
 
   return (
-    <header className="fixed top-0 z-30 w-full bg-gmx-slate-900">
-      <div className="mx-auto flex h-16 max-w-300 items-center justify-between px-4 sm:px-10">
-        {/* SiteLogo renders its own <a href="/"> — do not wrap it in
+    <>
+      <header
+        data-scrolled={scrolled}
+        data-hidden={hidden}
+        className="so4-scroll-header so4-scroll-header--compact fixed top-0 z-30 w-full bg-gmx-slate-900"
+      >
+        <div className="so4-scroll-header__inner mx-auto flex h-16 max-w-300 items-center justify-between px-4 sm:px-10">
+          {/* SiteLogo renders its own <a href="/"> — do not wrap it in
             another anchor (nested <a> is invalid HTML and breaks
             hydration for the whole route). */}
-        <div className="flex h-5 min-w-0 flex-1 items-center overflow-hidden sm:h-6">
-          <SiteLogo variant="landing" />
-        </div>
+          <div className="flex h-5 min-w-0 flex-1 items-center overflow-hidden sm:h-6">
+            <SiteLogo variant="landing" />
+          </div>
 
-        {/* Desktop nav */}
-        <ul ref={desktopNavRef} className="hidden items-center gap-5.5 sm:flex">
-          {NAV_LINKS.map(({ label, to }) => (
-            <li key={label}>
-              <Link
-                to={to}
-                className="text-14 font-medium tracking-[-0.448px] text-white/80 transition-colors duration-180 hover:text-white [&.active]:text-white/60"
+          {/* Desktop nav */}
+          <ul
+            ref={desktopNavRef}
+            className="hidden items-center gap-5.5 sm:flex"
+          >
+            {NAV_LINKS.map(({ label, to }) => (
+              <li key={label}>
+                <Link
+                  to={to}
+                  className="text-14 font-medium tracking-[-0.448px] text-white/80 transition-colors duration-180 hover:text-white [&.active]:text-white/60"
+                >
+                  {label}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <a
+                href="#"
+                className="text-14 font-medium tracking-[-0.448px] text-white/80 transition-colors duration-180 hover:text-white"
               >
-                {label}
-              </Link>
+                Docs
+              </a>
             </li>
-          ))}
-          <li>
-            <a
-              href="#"
-              className="text-14 font-medium tracking-[-0.448px] text-white/80 transition-colors duration-180 hover:text-white"
-            >
-              Docs
-            </a>
-          </li>
-        </ul>
+          </ul>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <OpenAppButton className="hidden sm:inline-flex" />
-          <HamburgerButton
-            open={open}
-            controls="landing-mobile-menu"
-            buttonRef={triggerRef}
-            className="sm:hidden"
-            onToggle={(event) => {
-              setInstant(event.detail === 0)
-              toggle()
-            }}
-          />
+          <div className="flex shrink-0 items-center gap-3">
+            <OpenAppButton className="hidden sm:inline-flex" />
+            <HamburgerButton
+              open={open}
+              controls="landing-mobile-menu"
+              buttonRef={triggerRef}
+              className="sm:hidden"
+              onToggle={(event) => {
+                setInstant(event.detail === 0)
+                toggle()
+              }}
+            />
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile full-screen menu */}
+      {/* Mobile full-screen menu. It lives outside <header> on purpose: the
+        header carries a transform when hidden, and a transformed ancestor
+        becomes the containing block for fixed descendants — which collapsed
+        this panel to zero height (#884). */}
       <div
         id="landing-mobile-menu"
         ref={panelRef}
@@ -196,6 +210,6 @@ export function HeaderMenu() {
           </div>
         </div>
       </div>
-    </header>
+    </>
   )
 }

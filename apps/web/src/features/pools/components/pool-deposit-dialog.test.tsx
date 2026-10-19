@@ -3,7 +3,10 @@ import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { PoolTransactionDialog } from "./pool-transaction-dialog"
+import type { Mock } from "vitest"
 import type { PoolMarketConfig } from "../data/markets"
+
+type DialogProps = React.ComponentProps<typeof PoolTransactionDialog>
 
 vi.mock("@/lib/contracts", () => ({
   getTokenClient: () => ({
@@ -69,8 +72,8 @@ const FAKE_ACCOUNT = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"
 
 describe("PoolTransactionDialog — deposit mode (#328)", () => {
   let queryClient: QueryClient
-  let onClose: ReturnType<typeof vi.fn>
-  let onQueued: ReturnType<typeof vi.fn>
+  let onClose: Mock<DialogProps["onClose"]>
+  let onQueued: Mock<NonNullable<DialogProps["onQueued"]>>
 
   beforeEach(() => {
     queryClient = new QueryClient({

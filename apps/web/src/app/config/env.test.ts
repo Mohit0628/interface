@@ -41,11 +41,6 @@ describe("ENV startup validation (#243)", () => {
     assert.equal(result.message, "Missing env var: VITE_HORIZON_URL")
   })
 
-  it("throws the exact error when a required contract ID is missing", () => {
-    const result = loadEnv(envWithout("VITE_CONTRACT_DATA_STORE"))
-    assert.equal(result.ok, false)
-    assert.equal(result.message, "Missing env var: VITE_CONTRACT_DATA_STORE")
-  })
 
   it("loads successfully and derives values when every required var is present", () => {
     const result = loadEnv(VALID_ENV)

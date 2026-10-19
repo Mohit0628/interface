@@ -29,6 +29,7 @@ SO4 is a unified-liquidity perpetuals DEX built on Stellar/Soroban. Deep order b
 - [Available Scripts](#available-scripts)
 - [Testing Guide](#testing-guide)
 - [Architecture](#architecture)
+- [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing) — see also [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`AGENTS.md`](./AGENTS.md)
 - [Changelog](#changelog)
 - [License](#license)
@@ -130,55 +131,61 @@ Each feature under `src/features/<name>/` follows the same convention:
 | [Bun](https://bun.sh) | ≥ 1.3 |
 | [Node.js](https://nodejs.org) | ≥ 20 |
 
-### Installation
+### 1. Clone and Install
 
 ```bash
 # Clone the repository
-git clone https://github.com/SO4-Markets/so4-monorepo.git
-cd so4-monorepo
+git clone https://github.com/SO4-Markets/interface.git
+cd interface
 
 # Install all workspace dependencies
 bun install
 ```
 
-### Full local stack (contracts + indexer + web)
+### 2. Configure Environment
 
-If you need the indexer and contracts running against the web app:
+Copy the example environment file to `.env.local` for local development:
 
 ```bash
-# Generate indexer types and build (src/types is gitignored)
+cp apps/web/.env.example apps/web/.env.local
+```
+
+> **Contract IDs:** All Soroban contract addresses are source-of-truth committed in `packages/contracts/contracts.json`. You do not need to configure any contract addresses in your environment variables.
+
+### 3. (Optional) Run the SubQuery Indexer Locally
+
+By default, the web app connects to Stellar testnet directly via Soroban RPC and falls back gracefully when the indexer is offline. If you wish to run the historical indexer locally:
+
+```bash
+# Generate types and build indexer
 bun run --cwd apps/s03-indexer codegen
 bun run --cwd apps/s03-indexer build
-
-# Sync the contract manifest from a local contracts checkout
-SO4_CONTRACTS_REPO=/path/to/contracts \
-  bun run --cwd apps/s03-indexer sync:contracts:local
 
 # Start the indexer stack (requires Docker)
 bun run --cwd apps/s03-indexer start
 ```
 
-Run `bun run check:integration` before pushing to mirror the CI matrix.
+Ensure `VITE_INDEXER_GRAPHQL_URL=http://localhost:3000` is enabled in `apps/web/.env.local` if using the local indexer.
 
-### Running the development server
+### 4. Run the Development Server
 
 ```bash
-# Start all apps in watch mode
+# Start all packages in development mode
 bun dev
 
 # Or start only the web app
-cd apps/web && bun dev
+bun run --cwd apps/web dev
 ```
 
-The app will be available at [http://localhost:3000](http://localhost:3000).
+The application will be running at [http://localhost:3000](http://localhost:3000).
 
-### Building for production
+### 5. Building for Production
 
 ```bash
-bun build
+bun run build
 ```
 
-Output is written to `apps/web/.output/`.
+Production assets are compiled by Turborepo and output to `apps/web/dist/`.
 
 ---
 
@@ -189,7 +196,7 @@ Run any of these from the **repository root**:
 | Command | Description |
 |---|---|
 | `bun dev` | Start all packages in development mode |
-| `bun build` | Build all packages for production |
+| `bun run build` | Build all packages for production |
 | `bun lint` | Lint all packages with ESLint |
 | `bun format` | Format all files with Prettier |
 | `bun typecheck` | Run TypeScript type checks across all packages |
@@ -257,6 +264,24 @@ The OrderVault client (`packages/contracts/src/clients/order-vault.ts`) is a stu
 ### Theme system
 
 The theme provider writes `dark` or `light` as a class on `<html>`. A blocking inline script in `<head>` reads `localStorage` before first paint to prevent flash of wrong theme. The chart component uses a `MutationObserver` on `document.documentElement` to re-apply color options instantly when the class changes.
+
+---
+
+## Troubleshooting
+
+### `Missing env var: VITE_*`
+
+If the web app fails to start or pages crash with `Missing env var: VITE_<NAME>`:
+
+1. **Verify `.env.local` existence:** Vite in development mode automatically loads `apps/web/.env.local`. Create it by copying the template:
+   ```bash
+   cp apps/web/.env.example apps/web/.env.local
+   ```
+2. **Required variables:** Only the core network variables are required by `apps/web/src/app/config/env.ts`:
+   - `VITE_NETWORK` (e.g. `testnet`)
+   - `VITE_RPC_URL` (e.g. `https://soroban-testnet.stellar.org`)
+   - `VITE_HORIZON_URL` (e.g. `https://horizon-testnet.stellar.org`)
+3. **Contract addresses:** Contract IDs are committed directly in `packages/contracts/contracts.json` and resolved via `@workspace/contracts`. Do not define `VITE_CONTRACT_*` in your `.env` files.
 
 ---
 

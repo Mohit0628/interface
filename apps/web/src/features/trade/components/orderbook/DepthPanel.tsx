@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@workspace/ui/lib/utils"
+import { resolveBookLevelPrice } from "../../lib/orderbook/seed-limit-price"
 import {  buildDepth } from "../../lib/orderbook/depth"
 import {
   
@@ -29,6 +30,11 @@ type Props = {
   /** Freshness of the feed the levels came from; shown in every layout. */
   health?: SourceHealth | null
   className?: string
+  /** Only supplied by a verified canonical executable-depth adapter. */
+  bookRevision?: bigint | null
+  feedActionable?: boolean
+  activeMarketId?: string
+  onSeedLimitPrice?: (value: { marketId: string; side: "bid" | "ask"; price: string }) => void
 }
 
 function Row({
@@ -37,15 +43,20 @@ function Row({
   visible,
   metadata,
   unit,
+  onSelect,
+  revision = null,
 }: {
   row: DepthRow
   side: "bid" | "ask"
   visible: VisibleDepth
   metadata: MarketDisplayMetadata
   unit: "base" | "quote"
+  onSelect?: (selectedRevision: bigint | null) => void
+  revision?: bigint | null
 }) {
   const display = rowSizeDisplay(row, unit, metadata)
   const fill = `${(depthFraction(row, visible) * 100).toFixed(1)}%`
+  const pressedRevision = useRef<{ revision: bigint | null } | null>(null)
   return (
     <div role="row" className="relative flex h-5 items-center font-mono text-xs select-none">
       {/* Depth bar. Deliberately not animated: rows re-sort as the book moves and a
@@ -59,7 +70,20 @@ function Row({
         style={{ width: fill }}
       />
       <span role="cell" className={cn("relative z-10 w-2/5 shrink-0 px-2 tabular-nums", side === "bid" ? "text-long" : "text-short")}>
-        {formatBucketPrice(row.price, metadata)}
+        {onSelect ? (
+          <button type="button"
+            onPointerDown={() => { pressedRevision.current = { revision } }}
+            onPointerCancel={() => { pressedRevision.current = null }}
+            onClick={() => {
+              const selectedRevision = pressedRevision.current?.revision ?? revision
+              pressedRevision.current = null
+              onSelect(selectedRevision)
+            }}
+            aria-label={`Select exact ${side} limit price from ${formatBucketPrice(row.price, metadata)} depth level`}
+            className="cursor-pointer tabular-nums focus-visible:outline-2 focus-visible:outline-primary">
+            {formatBucketPrice(row.price, metadata)}
+          </button>
+        ) : formatBucketPrice(row.price, metadata)}
       </span>
       <span role="cell" className="relative z-10 w-[30%] shrink-0 px-1 text-right tabular-nums text-foreground">
         {display.size}
@@ -78,10 +102,15 @@ function Row({
  * holds the subscription, so switching layout, grouping or unit only recomputes
  * a display view and can never remount or restart the feed.
  *
- * Display only. Bucket prices are labels, not executable prices, and nothing
- * here feeds a price into an order ticket.
+ * Bucket prices are labels, not executable prices. An optional callback
+ * enables exact-price seeding only for an explicitly verified live adapter.
  */
-export function DepthPanel({ metadata, bids, asks, rows, health = null, className }: Props) {
+export function DepthPanel({
+  metadata, bids, asks, rows, health = null, className,
+  bookRevision = null, feedActionable = false, activeMarketId,
+  onSeedLimitPrice,
+}: Props) {
+  const [announcement, setAnnouncement] = useState("")
   const layout = useOrderBookDisplayStore((s) => s.layout)
   const setLayout = useOrderBookDisplayStore((s) => s.setLayout)
   const setGrouping = useOrderBookDisplayStore((s) => s.setGrouping)
@@ -107,6 +136,54 @@ export function DepthPanel({ metadata, bids, asks, rows, health = null, classNam
     [usable, bids, asks, groupingMultiplier],
   )
   const visible = useMemo(() => (depth ? selectVisibleDepth(depth, layout, rows) : null), [depth, layout, rows])
+  // Keep the authoritative snapshot current even if an interrupted pointer
+  // gesture dispatches a callback created before the most recent feed update.
+  const latest = useRef({
+    metadata, activeMarketId, bids, asks, health, feedActionable,
+    bookRevision, groupingMultiplier, onSeedLimitPrice,
+  })
+  useLayoutEffect(() => {
+    latest.current = {
+      metadata, activeMarketId, bids, asks, health, feedActionable,
+      bookRevision, groupingMultiplier, onSeedLimitPrice,
+    }
+  })
+
+  const selectRow = (row: DepthRow, side: "bid" | "ask", selectedRevision: bigint | null) => {
+    const current = latest.current
+    if (!current.onSeedLimitPrice || !usable || !current.activeMarketId ||
+        current.activeMarketId !== usable.marketId ||
+        !isValidMetadata(current.metadata) ||
+        current.metadata.tickSize !== usable.tickSize ||
+        current.metadata.priceScale !== usable.priceScale ||
+        current.groupingMultiplier !== groupingMultiplier) return
+
+    const selectedLevel = resolveBookLevelPrice({
+      metadata: usable, activeMarketId: current.activeMarketId, side,
+      rowPrice: row.price,
+      groupingTick: tickFor({ groupingMultiplier, unit: "base" }, usable),
+      levels: side === "bid" ? bids : asks,
+      feedActionable: current.feedActionable && current.health?.isExecutable === true,
+      selectedRevision,
+      currentRevision: current.bookRevision,
+    })
+    const liveLevel = resolveBookLevelPrice({
+      metadata: current.metadata, activeMarketId: current.activeMarketId, side,
+      rowPrice: row.price,
+      groupingTick: tickFor({ groupingMultiplier, unit: "base" }, current.metadata),
+      levels: side === "bid" ? current.bids : current.asks,
+      feedActionable: current.feedActionable && current.health?.isExecutable === true,
+      selectedRevision,
+      currentRevision: current.bookRevision,
+    })
+    if (selectedLevel === null || selectedLevel !== liveLevel) return
+
+    current.onSeedLimitPrice({ marketId: usable.marketId, side, price: selectedLevel })
+    setAnnouncement(`Limit price set to ${selectedLevel} ${usable.quoteSymbol}; order not submitted`)
+  }
+  const maySelect = !!onSeedLimitPrice && !!activeMarketId &&
+    activeMarketId === usable?.marketId && feedActionable &&
+    health?.isExecutable === true && bookRevision !== null
 
   return (
     <section aria-label="Order book depth" className={cn("flex min-h-0 flex-col", className)}>
@@ -130,6 +207,7 @@ export function DepthPanel({ metadata, bids, asks, rows, health = null, classNam
         />
       </div>
 
+      <span role="status" aria-live="polite" className="sr-only">{announcement}</span>
       {usable && depth && visible ? (
         <div role="table" aria-label={`${usable.baseSymbol}/${usable.quoteSymbol} depth, size in ${prefs.unit === "base" ? usable.baseSymbol : usable.quoteSymbol}`} className="min-h-0 flex-1 overflow-hidden">
           <div role="row" className="flex h-5 items-center border-b border-border font-mono text-xs text-muted-foreground">
@@ -139,7 +217,7 @@ export function DepthPanel({ metadata, bids, asks, rows, health = null, classNam
           </div>
 
           {visible.asks.map((row) => (
-            <Row key={`a${row.price}`} row={row} side="ask" visible={visible} metadata={usable} unit={prefs.unit} />
+            <Row key={`a${row.price}`} row={row} side="ask" visible={visible} metadata={usable} unit={prefs.unit} revision={bookRevision} onSelect={maySelect ? (rev) => selectRow(row, "ask", rev) : undefined} />
           ))}
 
           {/* The spread comes from the canonical book, so grouping cannot move it. */}
@@ -153,7 +231,7 @@ export function DepthPanel({ metadata, bids, asks, rows, health = null, classNam
           </div>
 
           {visible.bids.map((row) => (
-            <Row key={`b${row.price}`} row={row} side="bid" visible={visible} metadata={usable} unit={prefs.unit} />
+            <Row key={`b${row.price}`} row={row} side="bid" visible={visible} metadata={usable} unit={prefs.unit} revision={bookRevision} onSelect={maySelect ? (rev) => selectRow(row, "bid", rev) : undefined} />
           ))}
 
           {visible.asks.length === 0 && visible.bids.length === 0 ? (

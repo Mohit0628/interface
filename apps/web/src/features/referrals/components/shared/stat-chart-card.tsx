@@ -5,8 +5,11 @@ import { formatUsd } from "@/shared/lib/format"
 
 function xAxisLabels(period: TimePeriod): Array<string> {
   const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, "0")
   const fmt = (d: Date) =>
-    `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`
+    period === "24h"
+      ? `${pad(d.getHours())}:${pad(d.getMinutes())}`
+      : `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`
   const msAgo = (ms: number) => new Date(now.getTime() - ms)
   const day = 86_400_000
 
@@ -18,7 +21,9 @@ function xAxisLabels(period: TimePeriod): Array<string> {
     total: 365 * day,
   }
 
-  const total = ranges[period]
+  // Exact 24-hour endpoints share a clock time. Exclude the first minute
+  // so five HH:mm labels are meaningful and distinct without adding a date.
+  const total = period === "24h" ? ranges[period] - 60_000 : ranges[period]
   return Array.from({ length: 5 }, (_, i) => fmt(msAgo(total - (i / 4) * total)))
 }
 
@@ -118,7 +123,7 @@ export function StatChartCard({ title, tooltip, value, period, accent = "blue" }
             const x = 28 + (i / (labels.length - 1)) * 368
             return (
               <text
-                key={label}
+                key={i}
                 x={x}
                 y={100}
                 textAnchor="middle"

@@ -4,10 +4,8 @@ import { cn } from "@workspace/ui/lib/utils"
 // ---------------------------------------------------------------------------
 // Base primitive
 //
-// Uses `motion-safe:animate-pulse` so the animation only runs when the user
-// has NOT requested reduced motion.  A CSS-level safety net in globals.css
-// provides belt-and-suspenders coverage for older browsers / non-Tailwind
-// class consumers.
+// The loading sheen is a transform-only sweep drawn on ::before, so it never
+// triggers layout. globals.css disables it under reduced motion.
 // ---------------------------------------------------------------------------
 
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
@@ -15,7 +13,10 @@ function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="skeleton"
       aria-hidden="true"
-      className={cn("bg-muted motion-safe:animate-pulse", className)}
+      className={cn(
+        "relative overflow-hidden bg-muted before:absolute before:inset-0 before:-translate-x-full before:animate-skeleton-sweep before:bg-linear-to-r before:from-transparent before:via-foreground/5 before:to-transparent",
+        className
+      )}
       {...props}
     />
   )

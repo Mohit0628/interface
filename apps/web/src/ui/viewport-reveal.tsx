@@ -1,20 +1,27 @@
-import {  useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { cn } from "@workspace/ui/lib/utils"
-import type {ReactNode} from "react";
+import type { ReactNode } from "react"
+import { supportsViewTimeline } from "@/lib/supports-view-timeline"
 import { useViewportReveal } from "@/lib/use-viewport-reveal"
 import { useReducedMotion } from "@/lib/use-reduced-motion"
 
 type ViewportRevealProps = {
   children: ReactNode
   className?: string
-  /** CSS class to apply when revealed (default: animation-class) */
+  /** Extra class applied once the content is visible. */
   revealClass?: string
 }
 
+type RevealMode = "pending" | "css" | "fallback" | "reduced"
+
 /**
- * Wrapper component that reveals children when they enter the viewport.
- * Automatically respects reduced-motion preferences. Children remain in
- * document flow even before reveal for accessibility.
+ * Reveals children as they enter the viewport.
+ *
+ * Uses CSS scroll-driven animations (`animation-timeline: view()`) where
+ * supported, so the reveal runs off the main thread. Browsers without view
+ * timelines keep the IntersectionObserver fallback. Reduced motion renders the
+ * content immediately, and the children stay in document flow and in the
+ * accessibility tree either way.
  */
 export function ViewportReveal({
   children,
@@ -22,31 +29,33 @@ export function ViewportReveal({
   revealClass = "opacity-100",
 }: ViewportRevealProps) {
   const reducedMotion = useReducedMotion()
-  const [isRevealed, setIsRevealed] = useState(reducedMotion)
+  const [mode, setMode] = useState<RevealMode>("pending")
+  const [isRevealed, setIsRevealed] = useState(false)
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setMode("reduced")
+      return
+    }
+
+    setMode(supportsViewTimeline() ? "css" : "fallback")
+  }, [reducedMotion])
 
   const ref = useViewportReveal({
     once: true,
     threshold: 0.1,
+    enabled: mode === "fallback",
     onReveal: () => setIsRevealed(true),
   })
 
-  // If reduced-motion is enabled, reveal immediately and don't apply animation
-  useEffect(() => {
-    if (reducedMotion) {
-      setIsRevealed(true)
-    }
-  }, [reducedMotion])
+  const revealed = mode === "reduced" || isRevealed
 
   return (
     <div
       ref={ref}
-      className={cn(
-        "transition-opacity",
-        reducedMotion ? revealClass : isRevealed ? revealClass : "opacity-0",
-        // Use duration-base for reveal animations
-        !reducedMotion && "duration-base",
-        className
-      )}
+      className={cn("so4-view-reveal", revealed && revealClass, className)}
+      data-reveal-mode={mode === "pending" ? undefined : mode}
+      data-revealed={revealed ? "true" : "false"}
     >
       {children}
     </div>

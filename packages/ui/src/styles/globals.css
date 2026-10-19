@@ -206,6 +206,7 @@
     --duration-moderate: 200ms;      /* Emphasis: section reveals, expansions */
     --duration-slow: 300ms;          /* Landing: hero motion, marquees */
     --duration-slowest: 400ms;       /* Landing: extended sequences */
+    --duration-pulse: 1500ms;        /* Loading pulse (motion spec: 1.5s loop) */
 
     /*
      * Motion easing tokens — consistent timing functions across the UI.
@@ -219,6 +220,31 @@
     --ease-out: cubic-bezier(0, 0, 0.2, 1);
     --ease-in: cubic-bezier(0.4, 0, 1, 1);
     --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /*
+     * Spring presets via CSS linear() easing curves (OB-011 motion design system).
+     *
+     * - spring-snappy: high-frequency UI interactions, micro-feedback, toggles, tab switches,
+     *   and button presses where quick physical response is needed without distracting oscillation.
+     * - spring-smooth: modals, dialogs, dropdowns, drawer sheets, and navigation reveals that
+     *   require natural, fluid deceleration with gentle settling.
+     * - spring-bouncy: attention-drawing micro-interactions, badge updates, toasts, celebratory
+     *   feedback, and drag-to-dismiss gestures with a slight playful overshoot.
+     */
+    --ease-spring-snappy: linear(
+        0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%,
+        0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 60.7%,
+        1.001 76.9%, 1
+    );
+    --ease-spring-smooth: linear(
+        0, 0.005, 0.021 2.2%, 0.082 5.1%, 0.294 12.3%, 0.548 19.9%, 0.738 27.6%,
+        0.869 35.5%, 0.948 43.7%, 0.985 52.2%, 1.001 61.2%, 1.006 71.1%, 1
+    );
+    --ease-spring-bouncy: linear(
+        0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%,
+        0.995 41.2%, 1.05 46.7%, 1.071 51.5%, 1.074 56.6%, 1.057 62.4%, 1.016 71.1%,
+        0.993 79.7%, 0.996 88.5%, 1
+    );
 }
 
 /*
@@ -247,7 +273,7 @@
     --color-gmx-slate-800: oklch(0.2157 0.0294 280.68);  /* #171827 — cards */
     --color-gmx-slate-700: oklch(0.2510 0.0360 278.84);  /* #1E2033 */
     --color-gmx-slate-650: oklch(0.2817 0.0443 277.70);  /* #24273F */
-    --color-gmx-slate-600: oklch(0.3862 0.0663 278.34);  /* #3C4067 — borders */
+    --color-gmx-slate-600: oklch(0.68 0.052 278.34);  /* WCAG AA compliant text & borders (contrast >= 4.5:1) */
     --color-gmx-slate-500: oklch(0.7242 0.0478 281.04);  /* #A0A3C4 — muted text */
     --color-gmx-slate-400: oklch(0.8145 0.0364 282.07);  /* #BEC0DA — secondary text */
     --color-gmx-light-150: oklch(0.9705 0.0054 274.97);  /* #F4F5F9 — light band */
@@ -286,6 +312,13 @@
     --radius-8: 0.5rem;   /* 8px  — buttons, inputs, launch buttons */
     --radius-12: 0.75rem; /* 12px — sponsor logo cards */
     --radius-20: 1.25rem; /* 20px — feature/pool/program cards */
+
+    /* Skeleton loading sheen (transform-only) */
+    --animate-skeleton-sweep: skeleton-sweep 1.5s ease-in-out infinite;
+    @keyframes skeleton-sweep {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(100%); }
+    }
 
     /* Hero title word-rotation (AnimatedTitle) */
     --animate-title-in: title-in 0.25s ease-in-out forwards;
@@ -401,6 +434,50 @@
     transition-property: color, background-color, border-color, opacity;
     transition-duration: var(--duration-base);
     transition-timing-function: var(--ease-in-out);
+}
+@utility ease-spring-snappy {
+    transition-timing-function: var(--ease-spring-snappy);
+}
+@utility ease-spring-smooth {
+    transition-timing-function: var(--ease-spring-smooth);
+}
+@utility ease-spring-bouncy {
+    transition-timing-function: var(--ease-spring-bouncy);
+}
+
+/*
+ * Route transitions via View Transitions API (OB-011 motion design system).
+ *
+ * Smooth crossfade between routes with prefers-reduced-motion fallback.
+ */
+@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(root) {
+    animation: var(--duration-base) var(--ease-out) both fade-out;
+}
+
+::view-transition-new(root) {
+    animation: var(--duration-base) var(--ease-out) both fade-in;
+}
+
+@keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
 }
 :root {
     --background: oklch(1 0 0);
@@ -955,4 +1032,306 @@
   [data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb {
     background-color: CanvasText !important;
   }
+}
+
+
+/* Motion review #880–883: shared timing tokens, compositor-friendly surfaces. */
+@keyframes so4-confirm-check {
+    from { opacity: 0; transform: scale(0.65); }
+    to { opacity: 1; transform: scale(1); }
+}
+.so4-confirm-check {
+    animation: so4-confirm-check var(--duration-moderate) var(--ease-out) both;
+}
+.so4-confirm-moment {
+    animation: so4-confirm-check var(--duration-slow) var(--ease-out) both;
+}
+[data-slot="tooltip-content"] {
+    transition: opacity var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out);
+}
+[data-slot="tooltip-content"][data-starting-style],
+[data-slot="tooltip-content"][data-ending-style] {
+    opacity: 0;
+    transform: translateY(3px);
+}
+
+/* Reversible overlays: transitions retarget from their current compositor state. */
+.so4-dialog-overlay,
+.so4-sheet-overlay {
+    opacity: 1;
+    transition: opacity var(--duration-base) var(--ease-out);
+}
+.so4-dialog-content {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    transition: opacity var(--duration-moderate) var(--ease-out), transform var(--duration-moderate) var(--ease-out);
+}
+.so4-dialog-overlay[data-starting-style],
+.so4-dialog-overlay[data-ending-style],
+.so4-sheet-overlay[data-starting-style],
+.so4-sheet-overlay[data-ending-style] { opacity: 0; }
+.so4-dialog-content[data-starting-style],
+.so4-dialog-content[data-ending-style] {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.96);
+}
+.so4-sheet-content {
+    opacity: 1;
+    transition: opacity var(--duration-moderate) var(--ease-out), transform var(--duration-moderate) var(--ease-out);
+}
+.so4-sheet-content[data-side="top"] { transform: translateY(0); }
+.so4-sheet-content[data-side="right"] { transform: translateX(0); }
+.so4-sheet-content[data-side="bottom"] { transform: translateY(0); }
+.so4-sheet-content[data-side="left"] { transform: translateX(0); }
+.so4-sheet-content[data-starting-style][data-side="top"],
+.so4-sheet-content[data-ending-style][data-side="top"] { opacity: 0; transform: translateY(-100%); }
+.so4-sheet-content[data-starting-style][data-side="right"],
+.so4-sheet-content[data-ending-style][data-side="right"] { opacity: 0; transform: translateX(100%); }
+.so4-sheet-content[data-starting-style][data-side="bottom"],
+.so4-sheet-content[data-ending-style][data-side="bottom"] { opacity: 0; transform: translateY(100%); }
+.so4-sheet-content[data-starting-style][data-side="left"],
+.so4-sheet-content[data-ending-style][data-side="left"] { opacity: 0; transform: translateX(-100%); }
+.so4-popover-content {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
+}
+.so4-popover-content[data-starting-style],
+.so4-popover-content[data-ending-style] { opacity: 0; transform: scale(.95); }
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 2; }
+@keyframes so4-tick-flash-up {
+    from {
+        opacity: 0.35;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes so4-tick-flash-down {
+    from {
+        opacity: 0.35;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.so4-flash-up-overlay {
+    background-color: var(--color-long);
+    animation: so4-tick-flash-up var(--duration-slow) var(--ease-out) forwards;
+    pointer-events: none;
+    will-change: opacity;
+}
+
+.so4-flash-down-overlay {
+    background-color: var(--color-short);
+    animation: so4-tick-flash-down var(--duration-slow) var(--ease-out) forwards;
+    pointer-events: none;
+    will-change: opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .so4-confirm-check, .so4-confirm-moment { animation: none; }
+    [data-slot="tooltip-content"] { transition: none; }
+    .so4-flash-up-overlay, .so4-flash-down-overlay { animation: none !important; opacity: 0 !important; }
+}
+:root[data-reduced-motion="true"] .so4-confirm-check,
+:root[data-reduced-motion="true"] .so4-confirm-moment { animation: none; }
+:root[data-reduced-motion="true"] [data-slot="tooltip-content"] { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+    .so4-dialog-overlay, .so4-sheet-overlay, .so4-dialog-content, .so4-sheet-content, .so4-popover-content {
+        transition: opacity var(--duration-fast) var(--ease-out);
+    }
+    .so4-dialog-content, .so4-sheet-content, .so4-popover-content { transform: none; }
+}
+:root[data-reduced-motion="true"] .so4-dialog-overlay,
+:root[data-reduced-motion="true"] .so4-sheet-overlay,
+:root[data-reduced-motion="true"] .so4-dialog-content,
+:root[data-reduced-motion="true"] .so4-sheet-content,
+:root[data-reduced-motion="true"] .so4-popover-content {
+    transition: none;
+    transform: none;
+}
+/* The explicit preference is global so independently-authored UI cannot miss it. */
+:root[data-reduced-motion="true"] *,
+:root[data-reduced-motion="true"] *::before,
+:root[data-reduced-motion="true"] *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+    [data-slot="skeleton"]::before { animation: none; display: none; }
+}
+:root[data-reduced-motion="true"] [data-slot="skeleton"]::before { animation: none; display: none; }
+
+/*
+ * Phase 9 UX motion (#884–#887).
+ *
+ * Every rule below is token-driven, compositor-friendly (transform/opacity),
+ * and has an instant fallback for the system preference or the in-app toggle.
+ */
+
+/* #884 — scroll-aware header. */
+.so4-scroll-header {
+    transition: transform var(--duration-moderate) var(--ease-out);
+    will-change: transform;
+}
+.so4-scroll-header[data-hidden="true"] {
+    transform: translateY(-100%);
+}
+/* Hairline + shadow fade in as one composited layer. */
+.so4-scroll-header::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--border);
+    box-shadow: 0 8px 24px -20px rgb(0 0 0 / 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-base) var(--ease-out);
+}
+.so4-scroll-header[data-scrolled="true"]::after {
+    opacity: 1;
+}
+/* Only the landing header is fixed over the hero, so its height can shrink
+   without moving any document content (no CLS). */
+.so4-scroll-header--compact .so4-scroll-header__inner {
+    transition: height var(--duration-moderate) var(--ease-out);
+}
+.so4-scroll-header--compact[data-scrolled="true"] .so4-scroll-header__inner {
+    height: 3.5rem;
+}
+
+/* #885 — scroll-driven section reveals, with the IntersectionObserver path
+   applied by ViewportReveal only when view timelines are unavailable. */
+@keyframes so4-view-reveal-in {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.so4-view-reveal {
+    opacity: 0;
+    transform: translateY(14px);
+}
+.so4-view-reveal[data-reveal-mode="css"] {
+    animation: so4-view-reveal-in linear both;
+    animation-timeline: view();
+    animation-range: entry 10% entry 90%;
+}
+.so4-view-reveal[data-reveal-mode="fallback"] {
+    transition:
+        opacity var(--duration-moderate) var(--ease-out),
+        transform var(--duration-moderate) var(--ease-out);
+}
+.so4-view-reveal[data-reveal-mode="fallback"][data-revealed="true"],
+.so4-view-reveal[data-reveal-mode="reduced"] {
+    opacity: 1;
+    transform: translateY(0);
+    animation: none;
+    transition: none;
+}
+
+/* #886 — tabular figures keep every in-flight count on the same grid. */
+.so4-count-up {
+    font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* #887 — wallet connect choreography. */
+@keyframes so4-wallet-row-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+.so4-wallet-row {
+    animation: so4-wallet-row-in var(--duration-moderate) var(--ease-out) both;
+    animation-delay: calc(var(--wallet-stagger, 0) * var(--duration-fast) * 0.35);
+}
+@keyframes so4-wallet-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.55;
+        transform: scale(1.16);
+    }
+}
+.so4-wallet-pulse {
+    animation: so4-wallet-pulse var(--duration-pulse) var(--ease-in-out) infinite;
+}
+@keyframes so4-wallet-pill-in {
+    from {
+        opacity: 0;
+        transform: translateY(2px) scale(0.94);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+.so4-wallet-pill {
+    animation: so4-wallet-pill-in var(--duration-moderate) var(--ease-out) both;
+    transform-origin: inline-start center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .so4-scroll-header,
+    .so4-scroll-header::after,
+    .so4-scroll-header--compact .so4-scroll-header__inner {
+        transition: none;
+    }
+    .so4-view-reveal {
+        opacity: 1;
+        transform: none;
+        animation: none;
+        transition: none;
+    }
+    .so4-wallet-row,
+    .so4-wallet-pulse,
+    .so4-wallet-pill {
+        animation: none;
+        transform: none;
+    }
+}
+:root[data-reduced-motion="true"] .so4-scroll-header,
+:root[data-reduced-motion="true"] .so4-scroll-header::after,
+:root[data-reduced-motion="true"]
+    .so4-scroll-header--compact
+    .so4-scroll-header__inner {
+    transition: none;
+}
+:root[data-reduced-motion="true"] .so4-view-reveal {
+    opacity: 1;
+    transform: none;
+    animation: none;
+    transition: none;
+}
+:root[data-reduced-motion="true"] .so4-wallet-row,
+:root[data-reduced-motion="true"] .so4-wallet-pulse,
+:root[data-reduced-motion="true"] .so4-wallet-pill {
+    animation: none;
+    transform: none;
 }

@@ -1,11 +1,48 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { act, render, screen } from "@testing-library/react"
+
 import { ViewportReveal } from "./viewport-reveal"
-import * as useReducedMotionModule from "@/lib/use-reduced-motion"
+import { supportsViewTimeline } from "@/lib/supports-view-timeline"
+import { useReducedMotion } from "@/lib/use-reduced-motion"
+
+vi.mock("@/lib/supports-view-timeline", () => ({
+  supportsViewTimeline: vi.fn(() => false),
+}))
+
+vi.mock("@/lib/use-reduced-motion", () => ({
+  useReducedMotion: vi.fn(() => false),
+}))
+
+let observerCallback: IntersectionObserverCallback
+let observerInstance: IntersectionObserver
+
+function installObserver() {
+  class MockIntersectionObserver {
+    constructor(callback: IntersectionObserverCallback) {
+      observerCallback = callback
+      observerInstance = this as unknown as IntersectionObserver
+    }
+    observe = vi.fn()
+    unobserve = vi.fn()
+    disconnect = vi.fn()
+  }
+
+  vi.stubGlobal("IntersectionObserver", MockIntersectionObserver)
+}
+
+function revealTarget() {
+  return screen.getByText("Test content").parentElement as HTMLElement
+}
 
 describe("ViewportReveal", () => {
   beforeEach(() => {
-    vi.mocked(useReducedMotionModule.useReducedMotion).mockReturnValue(false)
+    installObserver()
+    vi.mocked(useReducedMotion).mockReturnValue(false)
+    vi.mocked(supportsViewTimeline).mockReturnValue(false)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it("renders children", () => {
@@ -14,80 +51,104 @@ describe("ViewportReveal", () => {
         <div>Test content</div>
       </ViewportReveal>
     )
+
     expect(screen.getByText("Test content")).toBeInTheDocument()
   })
 
-  it("starts with opacity-0 when reduced-motion is disabled", () => {
-    const { container } = render(
+  it("uses the observer fallback and reveals after intersection", () => {
+    render(
       <ViewportReveal>
         <div>Test content</div>
       </ViewportReveal>
     )
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper).toHaveClass("opacity-0")
+
+    const wrapper = revealTarget()
+    expect(wrapper).toHaveAttribute("data-reveal-mode", "fallback")
+    expect(wrapper).toHaveAttribute("data-revealed", "false")
+
+    act(() =>
+      observerCallback(
+        [
+          {
+            isIntersecting: true,
+            target: wrapper,
+          } as unknown as IntersectionObserverEntry,
+        ],
+        observerInstance
+      )
+    )
+
+    expect(wrapper).toHaveAttribute("data-revealed", "true")
   })
 
-  it("starts with opacity-100 when reduced-motion is enabled", () => {
-    vi.mocked(useReducedMotionModule.useReducedMotion).mockReturnValue(true)
-    const { container } = render(
+  it("uses the CSS view timeline when supported", () => {
+    vi.mocked(supportsViewTimeline).mockReturnValue(true)
+    const observe = vi.fn()
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        observe = observe
+        unobserve = vi.fn()
+        disconnect = vi.fn()
+      }
+    )
+
+    render(
       <ViewportReveal>
         <div>Test content</div>
       </ViewportReveal>
     )
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper).toHaveClass("opacity-100")
+
+    expect(revealTarget()).toHaveAttribute("data-reveal-mode", "css")
+    expect(observe).not.toHaveBeenCalled()
   })
 
-  it("applies custom revealClass when provided", () => {
-    const { container } = render(
-      <ViewportReveal revealClass="scale-100">
+  it("shows content immediately when reduced motion is enabled", () => {
+    vi.mocked(useReducedMotion).mockReturnValue(true)
+
+    render(
+      <ViewportReveal>
         <div>Test content</div>
       </ViewportReveal>
     )
-    const wrapper = container.firstChild as HTMLElement
-    // Initially should have scale-0 (opposite of scale-100)
-    expect(wrapper).toHaveClass("transition-opacity")
+
+    const wrapper = revealTarget()
+    expect(wrapper).toHaveAttribute("data-reveal-mode", "reduced")
+    expect(wrapper).toHaveAttribute("data-revealed", "true")
   })
 
-  it("applies custom className to wrapper", () => {
-    const { container } = render(
+  it("applies a custom reveal class once visible", () => {
+    render(
+      <ViewportReveal revealClass="custom-revealed">
+        <div>Test content</div>
+      </ViewportReveal>
+    )
+
+    const wrapper = revealTarget()
+    expect(wrapper).not.toHaveClass("custom-revealed")
+
+    act(() =>
+      observerCallback(
+        [
+          {
+            isIntersecting: true,
+            target: wrapper,
+          } as unknown as IntersectionObserverEntry,
+        ],
+        observerInstance
+      )
+    )
+
+    expect(wrapper).toHaveClass("custom-revealed")
+  })
+
+  it("applies a custom className to the wrapper", () => {
+    render(
       <ViewportReveal className="custom-class">
         <div>Test content</div>
       </ViewportReveal>
     )
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper).toHaveClass("custom-class")
-  })
 
-  it("includes transition-opacity class", () => {
-    const { container } = render(
-      <ViewportReveal>
-        <div>Test content</div>
-      </ViewportReveal>
-    )
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper).toHaveClass("transition-opacity")
-  })
-
-  it("includes duration-base when reduced-motion is disabled", () => {
-    vi.mocked(useReducedMotionModule.useReducedMotion).mockReturnValue(false)
-    const { container } = render(
-      <ViewportReveal>
-        <div>Test content</div>
-      </ViewportReveal>
-    )
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper).toHaveClass("duration-base")
-  })
-
-  it("does not include duration-base when reduced-motion is enabled", () => {
-    vi.mocked(useReducedMotionModule.useReducedMotion).mockReturnValue(true)
-    const { container } = render(
-      <ViewportReveal>
-        <div>Test content</div>
-      </ViewportReveal>
-    )
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper).not.toHaveClass("duration-base")
+    expect(revealTarget()).toHaveClass("custom-class")
   })
 })

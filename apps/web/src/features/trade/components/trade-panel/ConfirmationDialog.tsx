@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import { createSwapOrder, sendBatchOrderTxn } from "../../lib/stellar"
 import { formatUsd } from "../../lib/trade-math"
@@ -24,6 +25,7 @@ import { useMarketRiskParams } from "../../hooks/useMarketRiskParams"
 import { validateExecutionRequest } from "../../lib/execution-support"
 import type { DecreaseOrderParams, IncreaseOrderParams } from "../../lib/stellar"
 import type { useTradeState } from "../../hooks/useTradeState"
+import { ENV } from "@/app/config/env"
 import { applyReferralCode } from "@/features/referrals/lib/referrals"
 import {
   buildBatchOrderTransaction,
@@ -39,6 +41,7 @@ import { formatAddress } from "@/shared/lib/format"
 type Props = {
   open: boolean
   onClose: () => void
+  onConfirmed?: (hash: string) => void
   tradeState: ReturnType<typeof useTradeState>
   sizeUsd: number
   entryPrice: number
@@ -49,6 +52,7 @@ type Props = {
 export function ConfirmationDialog({
   open,
   onClose,
+  onConfirmed,
   tradeState,
   sizeUsd,
   entryPrice,
@@ -132,8 +136,8 @@ export function ConfirmationDialog({
       sizeUsd,
       entryPrice,
       leverage,
-      triggerPrice: triggerPrice ?? "",
-      collateralAmount: fromAmount ?? "",
+      triggerPrice,
+      collateralAmount: fromAmount,
     }
 
     if (!inputSnapshotRef.current) {
@@ -303,10 +307,12 @@ export function ConfirmationDialog({
           leverage: effectiveLeverage,
         }
 
-        await sendBatchOrderTxn(account, {
+        const confirmedHash = await sendBatchOrderTxn(account, {
           createOrders: [parentOrder, ...sidecarCreateOrders],
         })
 
+        // sendBatchOrderTxn waits for ledger confirmation before resolving.
+        onConfirmed?.(confirmedHash)
         clearSidecarOrders()
       }
       onClose()
@@ -442,9 +448,30 @@ export function ConfirmationDialog({
                   : ""
             }
           >
-            {isSubmitting
-              ? "Submitting..."
-              : `Confirm ${typeLabel}`}
+            <span className="grid place-items-center">
+              <span
+                aria-hidden={isSubmitting}
+                className={cn(
+                  "col-start-1 row-start-1 transition-opacity duration-base ease-out",
+                  isSubmitting ? "opacity-0" : "opacity-100"
+                )}
+              >
+                {`Confirm ${typeLabel}`}
+              </span>
+              <span
+                aria-hidden={!isSubmitting}
+                className={cn(
+                  "col-start-1 row-start-1 flex items-center gap-2 transition-opacity duration-base ease-out",
+                  isSubmitting ? "opacity-100" : "opacity-0"
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+                />
+                Submitting...
+              </span>
+            </span>
           </Button>
         </DialogFooter>
       </DialogContent>

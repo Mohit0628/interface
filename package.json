@@ -44,5 +44,20 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "overrides": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@simple-git/argv-parser": "2.0.1",
+    "axios": "1.20.0",
+    "basic-ftp": "6.2.3",
+    "got": "11.8.6",
+    "parse-duration": "2.1.9",
+    "protobufjs": "7.6.6",
+    "qs": "6.16.1",
+    "simple-git": "4.0.2",
+    "tmp": "0.2.7",
+    "toml": "4.3.0",
+    "uuid": "11.1.1",
+    "ws": "8.22.0"
+  }
 }

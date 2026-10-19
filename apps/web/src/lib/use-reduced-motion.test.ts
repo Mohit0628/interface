@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { useReducedMotion } from "./use-reduced-motion"
+import { setMotionReduction, useReducedMotion } from "./motion-preference"
 
 describe("useReducedMotion", () => {
   let mediaQueryListMock: {
@@ -27,6 +27,8 @@ describe("useReducedMotion", () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    localStorage.removeItem("so4-reduced-motion")
+    delete document.documentElement.dataset.reducedMotion
   })
 
   it("returns false initially (SSR-safe hydration)", () => {
@@ -91,6 +93,15 @@ describe("useReducedMotion", () => {
       "change",
       expect.any(Function)
     )
+  })
+
+  it("honours the in-app setting and exposes it to CSS", () => {
+    const { result } = renderHook(() => useReducedMotion())
+
+    act(() => setMotionReduction(true))
+
+    expect(result.current).toBe(true)
+    expect(document.documentElement.dataset.reducedMotion).toBe("true")
   })
 
   it("does not leak timers or listeners on rapid mount/unmount", () => {

@@ -1,0 +1,21 @@
+version: "1"
+min_version: "1.0.0"
+
+commands:
+  lint:
+    glob: "*.{ts,tsx}"
+    run: bun lint --fix {staged_files}
+    stage_fixed: true
+
+  format:
+    glob: "*.{ts,tsx,json,yml,yaml,md}"
+    run: bun format {staged_files}
+    stage_fixed: true
+
+pre-commit:
+  parallel: false
+  commands:
+    lint:
+      run: bun lint {staged_files}
+    format:
+      run: bun format --check {staged_files}

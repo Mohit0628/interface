@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+export { useReducedMotion } from "./motion-preference"
 
 /**
  * Hook that detects the system's prefers-reduced-motion preference and updates
@@ -19,28 +19,3 @@ import { useEffect, useState } from "react"
  *   }
  * }, [reducedMotion])
  */
-export function useReducedMotion(): boolean {
-  // Default to false on server render to match initial hydration
-  const [reducedMotion, setReducedMotion] = useState(false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    // Query the current preference
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
-    setReducedMotion(mediaQuery.matches)
-    setMounted(true)
-
-    // Listen for changes to the preference
-    const handleChange = (event: MediaQueryListEvent) => {
-      setReducedMotion(event.matches)
-    }
-
-    mediaQuery.addEventListener("change", handleChange)
-    return () => {
-      mediaQuery.removeEventListener("change", handleChange)
-    }
-  }, [])
-
-  // Return false until mounted to ensure hydration matches server render
-  return mounted ? reducedMotion : false
-}

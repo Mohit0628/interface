@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { useKeyboardShortcut } from "./useKeyboardShortcut"
+import type { Mock } from "vitest"
 
 // Test component that uses the hook
 function TestComponent({
@@ -18,7 +19,7 @@ function TestComponent({
 }
 
 describe("useKeyboardShortcut", () => {
-  let onKeyPress: ReturnType<typeof vi.fn>
+  let onKeyPress: Mock<() => void>
 
   beforeEach(() => {
     onKeyPress = vi.fn()
@@ -252,8 +253,8 @@ describe("useKeyboardShortcut", () => {
 
   it("should handle changing callback function", async () => {
     const user = userEvent.setup()
-    const onKeyPress1 = vi.fn()
-    const onKeyPress2 = vi.fn()
+    const onKeyPress1 = vi.fn<() => void>()
+    const onKeyPress2 = vi.fn<() => void>()
 
     const { rerender } = render(
       <TestComponent shortcutKey="s" onKeyPress={onKeyPress1} />,

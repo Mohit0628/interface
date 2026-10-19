@@ -16,6 +16,7 @@ import { ConnectButton } from "@/features/wallet/components/ConnectButton"
 import { WhatsNew } from "@/features/changelog/components/WhatsNew"
 import { WhatsNewDot } from "@/features/changelog/components/WhatsNewDot"
 import { useWhatsNewIndicator } from "@/features/changelog/whats-new"
+import { useScrollHeader } from "@/shared/hooks/useScrollHeader"
 
 const LANDING_LINKS = [
   { label: "Trade", href: "/trade" },
@@ -46,12 +47,17 @@ type Props = {
 
 export function Navbar({ variant }: Props) {
   const { open, toggle, close } = useMobileMenu()
+  const { scrolled, hidden } = useScrollHeader()
   const isApp = variant === "app"
   // DX-016: dot on the changelog nav item when a major/minor release shipped.
   const hasNewReleases = useWhatsNewIndicator()
 
   return (
-    <nav className={navOuterClass}>
+    <nav
+      data-scrolled={scrolled}
+      data-hidden={hidden}
+      className={`${navOuterClass} so4-scroll-header`}
+    >
       <div
         className={`${containerClass} ${
           isApp ? "h-14 max-w-full" : "h-16 max-w-330"

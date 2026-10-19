@@ -15,8 +15,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import { formatUsd } from "../../lib/trade-math"
+import type * as ContractsModule from "@/lib/contracts"
+import type * as DataStoreModule from "../../lib/data-store"
 
 // `vi.mock` factories are hoisted above module-level declarations, so anything
 // they close over has to be created inside `vi.hoisted` to avoid a TDZ error.
@@ -64,14 +67,32 @@ vi.mock("../../lib/stellar", () => ({ createSwapOrder, sendBatchOrderTxn }))
 vi.mock("@/lib/soroban/simulate", () => ({
   estimateFee: vi.fn(() => Promise.resolve({ total: "0.5" })),
 }))
-vi.mock("@/lib/contracts/exchange-router-client", () => ({
-  buildCreateOrderTransaction: vi.fn(() => Promise.resolve({})),
-  buildBatchOrderTransaction: vi.fn(() => Promise.resolve({})),
-}))
+// The dialog imports the build helpers from the `@/lib/contracts` barrel, so
+// that is the module to replace — mocking a submodule the barrel never reads
+// would leave the real (RPC-simulating) implementation in place.
+vi.mock("@/lib/contracts", async (importOriginal) => {
+  const actual = await importOriginal<typeof ContractsModule>()
+  return {
+    ...actual,
+    buildCreateOrderTransaction: vi.fn(() => Promise.resolve({})),
+    buildBatchOrderTransaction: vi.fn(() => Promise.resolve({})),
+  }
+})
 vi.mock("../../lib/order-encoding", () => ({
   toCreateOrderParams: (o: unknown) => o,
   toDecreaseOrderParams: (o: unknown) => o,
 }))
+
+// ── Fee config: deterministic, no RPC simulation ──────────────────────────────
+vi.mock("../../lib/data-store", async (importOriginal) => {
+  const actual = await importOriginal<typeof DataStoreModule>()
+  return {
+    ...actual,
+    fetchFeeConfig: vi.fn(() =>
+      Promise.resolve({ ...actual.DEFAULT_FEE_CONFIG }),
+    ),
+  }
+})
 
 // ── Base UI dialog: lightweight stand-ins (render children when open) ─────────
 vi.mock("@workspace/ui/components/dialog", () => ({
@@ -110,6 +131,11 @@ function makeTradeState() {
     triggerPrice: "",
     leverage: 10,
     sidecarOrders: [],
+    advanced: {
+      advancedDisplay: false,
+      limitOrTPSL: false,
+      slippagePct: 0.3,
+    },
     clearSidecarOrders: vi.fn(() => {}),
     tradeFlags: {
       isLong: true,
@@ -127,17 +153,22 @@ type DialogProps = React.ComponentProps<typeof ConfirmationDialog>
 
 function renderDialog(overrides: Partial<DialogProps> = {}) {
   const onClose = vi.fn(() => {})
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
   render(
-    <ConfirmationDialog
-      open
-      onClose={onClose}
-      tradeState={makeTradeState() as unknown as DialogProps["tradeState"]}
-      sizeUsd={SIZE_USD}
-      entryPrice={ENTRY_PRICE}
-      liquidationPrice={LIQUIDATION_PRICE}
-      totalFeesUsd={TOTAL_FEES_USD}
-      {...overrides}
-    />
+    <QueryClientProvider client={queryClient}>
+      <ConfirmationDialog
+        open
+        onClose={onClose}
+        tradeState={makeTradeState() as unknown as DialogProps["tradeState"]}
+        sizeUsd={SIZE_USD}
+        entryPrice={ENTRY_PRICE}
+        liquidationPrice={LIQUIDATION_PRICE}
+        totalFeesUsd={TOTAL_FEES_USD}
+        {...overrides}
+      />
+    </QueryClientProvider>
   )
   return { onClose }
 }
@@ -172,6 +203,14 @@ describe("ConfirmationDialog (#227)", () => {
     expect(rowValue("Collateral")).toBe("1000 USDC") // collateral
     expect(rowValue("Total fees")).toBe(formatUsd(TOTAL_FEES_USD)) // estimated fees
     expect(rowValue("Entry price")).toBe(formatUsd(ENTRY_PRICE)) // price
+  })
+
+  it("shows the active network in the dialog header", async () => {
+    renderDialog()
+
+    // OB-077: the header renders ENV.NETWORK from @/app/config/env.
+    // VITE_NETWORK is pinned to "testnet" in vitest.config.ts.
+    expect(await screen.findByText("Network: testnet")).toBeInTheDocument()
   })
 
   it("runs the order flow and closes when Confirm is clicked", async () => {

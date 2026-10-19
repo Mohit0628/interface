@@ -99,16 +99,16 @@ export function parseAmount(raw: string, options: ParseAmountOptions = {}): Pars
     return { value: null, isPartial: false, wasClamped: false }
   }
 
-  const parsed = Number(normalized)
+  // Enforce decimal precision by truncating the string, not the float:
+  // Math.floor(0.57 * 1e7) / 1e7 yields 0.5699999 due to binary rounding.
+  const [intPart, fracPart = ""] = normalized.split(".")
+  const truncatedFrac = fracPart.slice(0, decimals)
+  const truncated = Number(truncatedFrac ? `${intPart}.${truncatedFrac}` : intPart)
 
   // Guard: NaN or Infinity shouldn't happen with the regex above, but be safe
-  if (!Number.isFinite(parsed)) {
+  if (!Number.isFinite(truncated)) {
     return { value: null, isPartial: false, wasClamped: false }
   }
-
-  // Enforce decimal precision — truncate excess digits
-  const factor = 10 ** decimals
-  const truncated = Math.floor(parsed * factor) / factor
 
   // Clamp to maxAmount if provided
   let finalValue = truncated

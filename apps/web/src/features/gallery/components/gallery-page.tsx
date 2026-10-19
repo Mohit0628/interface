@@ -32,6 +32,7 @@ import type { ProgressIndicatorProps } from "@workspace/ui/components/progress-i
 import { useDirection } from "@/ui/direction-provider"
 import { ChangelogCategoryBadge } from "@/features/changelog/components/ChangelogCategoryBadge"
 import { CHANGELOG_ENTRY_TYPES } from "@/features/changelog/types"
+import { REPO_URL } from "@/shared/lib/site-identity"
 
 const BUTTON_VARIANTS = [
   "default",
@@ -105,14 +106,14 @@ export function GalleryPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Every packages/ui primitive, all variants. See{" "}
             <a
-              href="https://github.com/Levee-HQ/interface/blob/main/DESIGN.md"
+              href={`${REPO_URL}/blob/main/DESIGN.md`}
               className="text-primary underline underline-offset-2"
             >
               DESIGN.md
             </a>{" "}
             and{" "}
             <a
-              href="https://github.com/Levee-HQ/interface/blob/main/packages/ui/CONTRIBUTING.md"
+              href={`${REPO_URL}/blob/main/packages/ui/CONTRIBUTING.md`}
               className="text-primary underline underline-offset-2"
             >
               packages/ui/CONTRIBUTING.md

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useReducedMotion } from "@/lib/use-reduced-motion"
 
 // SO4 markets: the hero sentence is the fixed "Trade [word] from your
 // wallet" — every rotating word needs to read naturally in that slot. GMX's
@@ -25,24 +26,13 @@ export function AnimatedTitle() {
   // since Playwright's animation freeze can't reliably override an inline
   // `style.animation` referencing a custom property).
   const [phase, setPhase] = useState<"idle" | "out" | "in">("idle")
-  const [reducedMotion, setReducedMotion] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  )
+  const reducedMotion = useReducedMotion()
   const [isPageHidden, setIsPageHidden] = useState(false)
 
 
   useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const updatePreference = () => {
-      setReducedMotion(query.matches)
-      if (query.matches) setPhase("idle")
-    }
-
-    query.addEventListener("change", updatePreference)
-    return () => query.removeEventListener("change", updatePreference)
-  }, [])
+    if (reducedMotion) setPhase("idle")
+  }, [reducedMotion])
 
   useEffect(() => {
     const handleVisibilityChange = () => {

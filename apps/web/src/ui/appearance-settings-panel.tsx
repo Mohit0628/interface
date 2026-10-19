@@ -3,8 +3,10 @@
 import * as React from "react"
 import { RadioGroup, RadioGroupItem } from "@workspace/ui/components/radio-group"
 import { cn } from "@workspace/ui/lib/utils"
-import {  useTheme } from "./theme-provider"
-import type {Theme} from "./theme-provider";
+import { Switch } from "@workspace/ui/components/switch"
+import { useTheme } from "./theme-provider"
+import type { Theme } from "./theme-provider"
+import { useMotionReductionSetting } from "@/lib/motion-preference"
 
 interface ThemeOption {
   value: Theme
@@ -80,6 +82,7 @@ export function AppearanceSettingsPanel({
   ...props
 }: AppearanceSettingsPanelProps) {
   const { theme, setTheme, resolvedTheme } = useTheme()
+  const [reduceMotion, setReduceMotion] = useMotionReductionSetting()
 
   const handleThemeChange = React.useCallback(
     (value: string) => {
@@ -158,6 +161,13 @@ export function AppearanceSettingsPanel({
           </span>
         </p>
       )}
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-raised p-4">
+        <div className="space-y-1">
+          <label htmlFor="reduce-motion" className="text-13 font-medium">Reduce motion</label>
+          <p className="text-11 text-muted-foreground">Use instant or opacity-only transitions throughout the app.</p>
+        </div>
+        <Switch id="reduce-motion" checked={reduceMotion} onCheckedChange={setReduceMotion} />
+      </div>
     </div>
   )
 }

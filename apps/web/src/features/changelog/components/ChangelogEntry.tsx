@@ -2,6 +2,7 @@ import { Badge } from "@workspace/ui/components/badge"
 import { areaLabel, typeLabel, typeToVariant } from "../utils"
 import { InlineMarkdown } from "./InlineMarkdown"
 import type { ChangelogEntry as IChangelogEntry } from "../types"
+import { REPO_URL } from "@/shared/lib/site-identity"
 
 interface ChangelogEntryProps {
   entry: IChangelogEntry
@@ -39,7 +40,7 @@ export function ChangelogEntry({ entry, highlight }: ChangelogEntryProps) {
       {entry.pr && (
         <div className="mt-2 sm:mt-0 sm:ml-4 shrink-0">
           <a
-            href={`https://github.com/Levee-HQ/interface/pull/${entry.pr}`}
+            href={`${REPO_URL}/pull/${entry.pr}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-11 min-w-11 items-center justify-center px-3 text-xs/relaxed font-medium text-info transition-colors hover:text-info/80"

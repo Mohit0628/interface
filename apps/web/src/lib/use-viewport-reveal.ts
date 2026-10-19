@@ -7,6 +7,8 @@ type UseViewportRevealOptions = {
   threshold?: number | Array<number>
   /** Callback when element enters viewport */
   onReveal?: () => void
+  /** Disable the observer when a CSS scroll-driven reveal is in charge */
+  enabled?: boolean
 }
 
 /**
@@ -15,13 +17,13 @@ type UseViewportRevealOptions = {
  * automatically on unmount.
  */
 export function useViewportReveal(options: UseViewportRevealOptions = {}) {
-  const { once = true, threshold = 0.1, onReveal } = options
+  const { once = true, threshold = 0.1, onReveal, enabled = true } = options
   const ref = useRef<HTMLDivElement>(null)
   const hasRevealed = useRef(false)
 
   useEffect(() => {
     const element = ref.current
-    if (!element) return
+    if (!element || !enabled) return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -38,7 +40,7 @@ export function useViewportReveal(options: UseViewportRevealOptions = {}) {
 
     observer.observe(element)
     return () => observer.disconnect()
-  }, [once, threshold, onReveal])
+  }, [enabled, once, threshold, onReveal])
 
   return ref
 }

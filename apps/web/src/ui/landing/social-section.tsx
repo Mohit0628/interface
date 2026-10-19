@@ -1,5 +1,6 @@
 import { NewsletterForm } from "./newsletter-form"
 import { SocialSlider } from "./social-slider"
+import { SOCIAL_URLS } from "@/shared/lib/site-identity"
 
 // Counts stay "-" — no social account has a real follower count to report
 // yet, and a fabricated number is worse than an honest placeholder. URLs
@@ -8,10 +9,10 @@ import { SocialSlider } from "./social-slider"
 // the page is internally consistent; GitHub is the one link that's
 // definitely real (this repo).
 const SOCIAL_STATS = [
-  { name: "Discord", value: "-", href: "https://discord.gg/so4market" },
-  { name: "X", value: "-", href: "https://twitter.com/so4market" },
-  { name: "Telegram", value: "-", href: "https://t.me/so4market" },
-  { name: "GitHub", value: "Join", href: "https://github.com/Levee-HQ/interface" },
+  { name: "Discord", value: "-", href: SOCIAL_URLS.discord },
+  { name: "X", value: "-", href: SOCIAL_URLS.x },
+  { name: "Telegram", value: "-", href: SOCIAL_URLS.telegram },
+  { name: "GitHub", value: "Join", href: SOCIAL_URLS.github },
 ]
 
 // GMX's referral-terms/media-kit/terms pages don't exist for SO4 yet — no
@@ -42,7 +43,7 @@ export function SocialSection() {
           <div className="flex flex-wrap gap-9">
             {SOCIAL_STATS.map(({ name, value, href }) => (
               <a key={name} href={href} target="_blank" rel="noreferrer" className="group">
-                <div className="text-14 text-gmx-slate-500 transition-colors duration-180 group-hover:text-gmx-blue-300 group-focus-visible:text-gmx-blue-300">
+                <div className="text-14 text-gmx-slate-500 transition-colors duration-base group-hover:text-gmx-blue-300 group-focus-visible:text-gmx-blue-300">
                   {name}
                 </div>
                 <div className="mt-1 text-40 font-medium text-white">{value}</div>
@@ -58,7 +59,7 @@ export function SocialSection() {
             <a
               key={label}
               href={href}
-              className="text-12 font-medium text-gmx-slate-500 transition-colors duration-180 hover:text-white active:text-white/80"
+              className="text-12 font-medium text-gmx-slate-500 transition-colors duration-base hover:text-white active:text-white/80"
             >
               {label}
             </a>

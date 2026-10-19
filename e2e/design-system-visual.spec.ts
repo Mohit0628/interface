@@ -47,9 +47,6 @@ async function stubExternalNetwork(page: Page) {
   await page.route("**/api.binance.com/**", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
   )
-  await page.route("**/oracle.biscotti-proxy-worker.workers.dev/**", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
-  )
   // Same "close immediately" approach as trade.spec.ts — the app already
   // falls back to REST polling when no live-bar message ever arrives.
   await page.routeWebSocket("wss://stream.binance.com:9443/**", (ws) => {

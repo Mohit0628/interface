@@ -3,7 +3,8 @@
     "collect": {
       "numberOfRuns": 3,
       "startServerCommand": "bun run dev",
-      "startServerReadyPattern": "Listening on http://localhost:3000",
+      "startServerReadyPattern": "Listening on: http://localhost:3000",
+      "startServerReadyTimeout": 120000,
       "url": [
         "http://localhost:3000/",
         "http://localhost:3000/concepts/risk",

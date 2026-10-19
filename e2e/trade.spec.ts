@@ -18,9 +18,6 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api.binance.com/api/v3/ticker/bookTicker**", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
   )
-  await page.route("**/oracle.biscotti-proxy-worker.workers.dev/prices**", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
-  )
 
   // Close the live-bar WebSocket immediately instead of letting it hang for
   // its 4s no-message timeout — the app already falls back to REST polling

@@ -1,5 +1,6 @@
 import { Slider } from "@workspace/ui/components/slider"
 import { Badge } from "@workspace/ui/components/badge"
+import { haptic } from "@/shared/lib/haptics"
 
 type LeverageSliderProps = {
   min?: number
@@ -21,7 +22,11 @@ export function LeverageSlider({ min = 1, max = 50, step = 0.5, value, onChange 
         max={max}
         step={step}
         value={[value]}
-        onValueChange={(v) => onChange(Array.isArray(v) ? v[0] : v)}
+        onValueChange={(v) => {
+          const next = Array.isArray(v) ? v[0] : v
+          if (next !== value) haptic("detent")
+          onChange(next)
+        }}
         className="w-full"
       />
       <div className="flex justify-between text-xs text-muted-foreground">

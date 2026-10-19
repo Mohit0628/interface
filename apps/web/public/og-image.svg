@@ -42,7 +42,7 @@
   <text x="148" y="99"
         font-family="ui-monospace, 'SF Mono', Menlo, monospace"
         font-size="19" font-weight="500" letter-spacing="0.4"
-        fill="#F5F6F7">levee<tspan fill="#5A6068">.market</tspan></text>
+        fill="#F5F6F7">SO4<tspan fill="#5A6068">.market</tspan></text>
 
   <!-- ── Eyebrow ──────────────────────────────────────── -->
   <circle cx="76" cy="172" r="4" fill="#4DB8FF"/>

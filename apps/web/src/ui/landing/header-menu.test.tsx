@@ -40,4 +40,23 @@ describe("HeaderMenu", () => {
     expect(panel).toHaveAttribute("inert")
     expect(document.body.style.overflow).toBe("")
   })
+
+  it("renders the mobile menu outside the scrolled header", () => {
+    vi.stubGlobal("matchMedia", () => ({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+    render(<HeaderMenu />)
+
+    const header = document.querySelector("header.so4-scroll-header")
+    const panel = document.getElementById("landing-mobile-menu")
+
+    expect(header).not.toBeNull()
+    expect(panel).not.toBeNull()
+    // Regression guard for #884: the header is transformed while hidden, and a
+    // transformed ancestor becomes the containing block for fixed descendants,
+    // which collapses this fixed panel. Keep the panel as a sibling.
+    expect(panel?.closest("header")).toBeNull()
+  })
 })

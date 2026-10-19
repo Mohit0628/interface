@@ -136,6 +136,13 @@ describe("parseAmount", () => {
       const result = parseAmount("1.1234567", { decimals: 6 })
       expect(result.value).toBe(1.123456)
     })
+
+    it("does not lose a unit to floating-point truncation", () => {
+      // Math.floor(0.57 * 1e7) / 1e7 === 0.5699999
+      expect(parseAmount("0.57").value).toBe(0.57)
+      expect(parseAmount("0.57", { decimals: 2 }).value).toBe(0.57)
+      expect(parseAmount("0.5799999999").value).toBe(0.5799999)
+    })
   })
 })
 

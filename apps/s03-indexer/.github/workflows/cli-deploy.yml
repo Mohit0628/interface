@@ -30,5 +30,10 @@ jobs:
       - name: repo
         run: echo ${{github.repository}}
       - name: Publish and Deploy
+        # Inputs go through env vars, not ${{ }} interpolation, so a crafted
+        # projectName cannot inject shell commands into this step.
+        env:
+          PROJECT_NAME: ${{ github.event.inputs.projectName }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          sh .github/workflows/scripts/publish-deploy.sh -o ${{github.repository}} -p ${{github.event.inputs.projectName}} -e ${{secrets.ENDPOINT}}
+          sh .github/workflows/scripts/publish-deploy.sh -o "$REPOSITORY" -p "$PROJECT_NAME" -e "$ENDPOINT"

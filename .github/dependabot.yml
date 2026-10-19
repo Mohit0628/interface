@@ -1,0 +1,35 @@
+version: 2
+updates:
+  # Bun owns the text bun.lock. The npm ecosystem would update the wrong lockfile.
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 8
+    groups:
+      runtime-minor-patch:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      developer-tooling-minor-patch:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:30"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 4
+    groups:
+      actions:
+        patterns:
+          - "*"

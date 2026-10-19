@@ -26,6 +26,7 @@ import { ConfirmationDialog } from "./ConfirmationDialog"
 import { ApplyReferralCodePrompt } from "./ApplyReferralCodePrompt"
 import { LeverageSlider } from "./LeverageSlider"
 import type { TradeMode, TradeType, useTradeState } from "../../hooks/useTradeState"
+import { explorerTxUrl } from "@/app/config/network"
 import { NumberInput } from "@/shared/components/NumberInput"
 import { useWalletStore } from "@/features/wallet/store/wallet-store"
 import { TokenIcon } from "@/shared/components/TokenIcon"
@@ -43,8 +44,9 @@ type TradePanelProps = {
 }
 
 export function TradePanel({ trade }: TradePanelProps) {
-  const { getMidPrice, isStale } = useTokenPrices()
+  const { getMidPrice, getPrice, isStale } = useTokenPrices()
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmedHash, setConfirmedHash] = useState<string | null>(null)
   const [priceValidationError, setPriceValidationError] = useState<string | null>(null)
   const [previousMode, setPreviousMode] = useState<TradeMode>(trade.tradeMode)
   const account = useWalletStore((state) => state.address)
@@ -112,6 +114,7 @@ export function TradePanel({ trade }: TradePanelProps) {
 
   const priceStale = isStale(toTokenAddress)
   const toTokenLabel = formatTokenLabel(toTokenAddress)
+  const activePrice = getPrice(toTokenAddress)
   const canTrade = Boolean(account) && sizeUsd > 0 && !priceStale &&
     (tradeFlags.isSwap || marketRisk.state === "available")
 
@@ -143,34 +146,43 @@ export function TradePanel({ trade }: TradePanelProps) {
 
   return (
     <div className="flex min-w-0 flex-col gap-3 p-4">
+      <p role="status" aria-label="Active price source" className="text-xs text-muted-foreground">
+        Price source: {activePrice?.source === "pyth" ? "Pyth Hermes" : activePrice?.source === "binance" ? "Binance reference" : activePrice?.source === "gmx" ? "GMX reference" : activePrice?.source === "fallback" ? "Illustrative fallback (not live)" : "Unavailable"}
+      </p>
       {/* ── Trade type tabs: Long / Short / Swap ───────────────────── */}
       <Tabs
         value={tradeType}
         onValueChange={(v) => setTradeType(v as TradeType)}
       >
-        <TabsList className="w-full">
+        <TabsList
+          className={cn(
+            "w-full transition-colors duration-base ease-spring-smooth",
+            tradeType === "Long" && "[&_[data-slot=tabs-indicator]]:bg-emerald-500/15 [&_[data-slot=tabs-indicator]]:border-emerald-500/30",
+            tradeType === "Short" && "[&_[data-slot=tabs-indicator]]:bg-rose-500/15 [&_[data-slot=tabs-indicator]]:border-rose-500/30"
+          )}
+        >
           <TabsTrigger
             value="Long"
-            className="flex-1 text-green-500 data-[state=active]:text-green-400"
+            className="flex-1 text-green-500 data-[state=active]:text-green-400 font-medium"
           >
             Long
           </TabsTrigger>
           <TabsTrigger
             value="Short"
-            className="flex-1 text-red-500 data-[state=active]:text-red-400"
+            className="flex-1 text-red-500 data-[state=active]:text-red-400 font-medium"
           >
             Short
           </TabsTrigger>
-          <TabsTrigger value="Swap" className="flex-1">
+          <TabsTrigger value="Swap" className="flex-1 font-medium">
             Swap
           </TabsTrigger>
         </TabsList>
 
         {/* ── Order mode: Market / Limit / Trigger ─────────────────── */}
         <Tabs value={tradeMode} onValueChange={(v) => setTradeMode(v as TradeMode)}>
-          <TabsList variant="line" className="w-full transition-all duration-base">
+          <TabsList variant="line" className="w-full transition-colors duration-base">
             {availableTradeModes.map((mode) => (
-              <TabsTrigger key={mode} value={mode} className="flex-1 transition-colors duration-fast">
+              <TabsTrigger key={mode} value={mode} className="flex-1">
                 {mode}
               </TabsTrigger>
             ))}
@@ -199,6 +211,7 @@ export function TradePanel({ trade }: TradePanelProps) {
               type="text"
               inputMode="decimal"
               placeholder="0.00"
+              value={trade.triggerPrice}
               className="pe-12 font-mono text-sm"
               onChange={(e) => {
                 const value = e.target.value
@@ -330,10 +343,27 @@ export function TradePanel({ trade }: TradePanelProps) {
         {tradeType} {!tradeFlags.isSwap && toTokenLabel}
       </Button>
 
+      {confirmedHash && (
+        <div role="status" aria-live="polite" className="so4-confirm-moment flex items-center gap-2 rounded-md border border-success/30 bg-success/10 p-3 text-xs text-foreground">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="so4-confirm-check size-5 shrink-0 text-success">
+            <circle cx="12" cy="12" r="10" />
+            <path d="m7 12 3 3 7-7" />
+          </svg>
+          <span className="flex-1">
+            <strong className="block font-semibold">Order confirmed on ledger</strong>
+            Your orders and positions update as indexing completes.
+          </span>
+          <a className="shrink-0 text-primary underline-offset-2 hover:underline focus-visible:underline" href={explorerTxUrl(confirmedHash)} target="_blank" rel="noopener noreferrer">
+            View tx
+          </a>
+        </div>
+      )}
+
       {/* ── Confirmation modal ───────────────────────────────────── */}
       <ConfirmationDialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
+        onConfirmed={setConfirmedHash}
         tradeState={trade}
         sizeUsd={sizeUsd}
         entryPrice={entryPrice}

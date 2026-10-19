@@ -1,9 +1,9 @@
+import { useEffect, useRef, useState } from "react"
 import { cn } from "@workspace/ui/lib/utils"
-import {  useOrderBook } from "../../hooks/useOrderBook"
-import type {OrderBookLevel} from "../../hooks/useOrderBook";
-import { formatUsd } from "@/shared/lib/format"
+import { useOrderBook } from "../../hooks/useOrderBook"
 import { useRecentTrades } from "../../hooks/useRecentTrades"
-import { useState } from "react"
+import type { OrderBookLevel } from "../../hooks/useOrderBook"
+import { formatUsd } from "@/shared/lib/format"
 
 type Props = {
   symbol: string | undefined
@@ -23,6 +23,33 @@ function DepthRow({ level, side, compact, onHover }: RowProps) {
   const isBid = side === "bid"
   const depthPct = `${(level.depth * 100).toFixed(1)}%`
 
+  // OB-011 / issue 873: 300ms price-tick flash on level size/price update
+  const [flashDirection, setFlashDirection] = useState<"up" | "down" | null>(null)
+  const prevSizeRef = useRef(level.size)
+  const prevPriceRef = useRef(level.price)
+  const flashKeyRef = useRef(0)
+
+  useEffect(() => {
+    const sizeChanged = prevSizeRef.current !== level.size
+    const priceChanged = prevPriceRef.current !== level.price
+
+    if (sizeChanged || priceChanged) {
+      const isUp = priceChanged
+        ? level.price > prevPriceRef.current
+        : level.size > prevSizeRef.current
+
+      prevSizeRef.current = level.size
+      prevPriceRef.current = level.price
+      flashKeyRef.current += 1
+      setFlashDirection(isUp ? "up" : "down")
+
+      const timer = setTimeout(() => {
+        setFlashDirection(null)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [level.size, level.price])
+
   return (
     <div
       role="row"
@@ -38,11 +65,22 @@ function DepthRow({ level, side, compact, onHover }: RowProps) {
       tabIndex={0}
       aria-label={`${isBid ? "Bid" : "Ask"} at ${formatUsd(level.price, { decimals: 2 })}, size ${level.size.toFixed(4)}, cumulative ${level.total.toFixed(4)}`}
     >
+      {/* 300ms price-tick flash overlay — zero layout shift, opacity only */}
+      {flashDirection && (
+        <div
+          key={flashKeyRef.current}
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-0 z-0",
+            flashDirection === "up" ? "so4-flash-up-overlay" : "so4-flash-down-overlay",
+          )}
+        />
+      )}
       {/* depth fill — absolutely positioned behind text */}
       <div
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute inset-y-0 transition-[width] duration-100",
+          "pointer-events-none absolute inset-y-0 transition-[width] duration-fast",
           isBid
             ? "right-0 bg-green-500/10"
             : "left-0 bg-red-500/10",
@@ -162,16 +200,35 @@ function ColumnHeaders({ compact }: { compact: boolean }) {
 function SpreadRow({
   spread,
   spreadPct,
-  midPrice,
   referencePrice,
   referencePriceLabel,
 }: {
   spread: number | null
   spreadPct: number | null
-  midPrice: number | null
   referencePrice: number | null
   referencePriceLabel: string
 }) {
+  // OB-011 / issue 873: 300ms price-tick flash on last/reference price update
+  const [flashDirection, setFlashDirection] = useState<"up" | "down" | null>(null)
+  const prevPriceRef = useRef(referencePrice)
+  const flashKeyRef = useRef(0)
+
+  useEffect(() => {
+    if (referencePrice !== null && prevPriceRef.current !== null && referencePrice !== prevPriceRef.current) {
+      const isUp = referencePrice > prevPriceRef.current
+      prevPriceRef.current = referencePrice
+      flashKeyRef.current += 1
+      setFlashDirection(isUp ? "up" : "down")
+
+      const timer = setTimeout(() => {
+        setFlashDirection(null)
+      }, 300)
+      return () => clearTimeout(timer)
+    } else if (referencePrice !== null && prevPriceRef.current === null) {
+      prevPriceRef.current = referencePrice
+    }
+  }, [referencePrice])
+
   return (
     <div
       role="separator"
@@ -190,18 +247,39 @@ function SpreadRow({
         {spreadPct !== null && <span className="ml-1">({spreadPct.toFixed(3)}%)</span>}
       </span>
       {referencePrice !== null && (
-        <span title={referencePriceLabel}>
-          {referencePriceLabel === "Last" && (
-            <span className="mr-0.5 opacity-60">Last</span>
+        <span
+          title={referencePriceLabel}
+          className="relative inline-flex items-center px-1 py-0.5 rounded overflow-hidden"
+        >
+          {flashDirection && (
+            <span
+              key={flashKeyRef.current}
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute inset-0 z-0 rounded",
+                flashDirection === "up" ? "so4-flash-up-overlay" : "so4-flash-down-overlay",
+              )}
+            />
           )}
-          {referencePriceLabel === "Mid" && (
-            <span className="mr-0.5 opacity-60">Mid</span>
-          )}
-          {referencePriceLabel === "Mark" && (
-            <span className="mr-0.5 opacity-60">Mark</span>
-          )}
-          <span className="text-foreground/70">
-            {formatUsd(referencePrice, { decimals: 2 })}
+          <span className="relative z-10 flex items-center">
+            {referencePriceLabel === "Last" && (
+              <span className="mr-0.5 opacity-60">Last</span>
+            )}
+            {referencePriceLabel === "Mid" && (
+              <span className="mr-0.5 opacity-60">Mid</span>
+            )}
+            {referencePriceLabel === "Mark" && (
+              <span className="mr-0.5 opacity-60">Mark</span>
+            )}
+            <span
+              className={cn(
+                "text-foreground/70",
+                flashDirection === "up" && "text-green-500",
+                flashDirection === "down" && "text-red-500",
+              )}
+            >
+              {formatUsd(referencePrice, { decimals: 2 })}
+            </span>
           </span>
         </span>
       )}
@@ -217,9 +295,9 @@ export function DepthLadder({ symbol, compact = false }: Props) {
   const { trades } = useRecentTrades(symbol)
 
   // OB-054: Determine reference price — prefer last trade, fall back to mid price
-  const lastTradePrice = trades[0]?.price ?? null
+  const lastTradePrice = trades.length > 0 ? trades[0].price : null
   const referencePrice = lastTradePrice ?? midPrice
-  const referencePriceLabel = lastTradePrice !== null ? "Last" : midPrice !== null ? "Mid" : "Mark"
+  const referencePriceLabel = lastTradePrice ? "Last" : midPrice ? "Mid" : "Mark"
 
   // OB-056: Cumulative depth inspection state
   const [hoveredLevel, setHoveredLevel] = useState<{ level: OrderBookLevel; side: "bid" | "ask" } | null>(null)
@@ -322,7 +400,6 @@ export function DepthLadder({ symbol, compact = false }: Props) {
           <SpreadRow 
             spread={spread} 
             spreadPct={spreadPct} 
-            midPrice={midPrice}
             referencePrice={referencePrice}
             referencePriceLabel={referencePriceLabel}
           />

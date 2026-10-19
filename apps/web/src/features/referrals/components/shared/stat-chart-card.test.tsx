@@ -1,9 +1,39 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 import { StatChartCard } from "./stat-chart-card"
 
 describe("StatChartCard", () => {
-  afterEach(cleanup)
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+  })
+
+  it.each(["24h", "7d", "30d", "90d", "total"] as const)(
+    "renders five distinct labels for the %s period",
+    (period) => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date("2026-10-15T12:30:00"))
+
+      const { container } = render(
+        <StatChartCard title="Volume" tooltip="test" value={0} period={period} />,
+      )
+      const labels = Array.from(container.querySelectorAll('text[y="100"]')).map(
+        (element) => element.textContent,
+      )
+
+      expect(labels).toHaveLength(5)
+      expect(new Set(labels).size).toBe(labels.length)
+      if (period === "24h") {
+        expect(labels).toEqual(
+          expect.arrayContaining([expect.stringMatching(/^\d{2}:\d{2}$/)]),
+        )
+        expect(labels.every((label) => /^\d{2}:\d{2}$/.test(label))).toBe(true)
+      } else {
+        expect(labels.every((label) => /^\d{2}\/\d{2}$/.test(label))).toBe(true)
+      }
+    },
+  )
+
   it("renders the title", () => {
     render(
       <StatChartCard title="Trading Volume" tooltip="Total volume" value={0} period="total" />,

@@ -74,6 +74,11 @@ describe("AppearanceSettingsPanel", () => {
       expect(screen.getByText("Sync with your device settings")).toBeInTheDocument()
     })
 
+    it("provides an app-level reduce motion setting", () => {
+      renderWithTheme(<AppearanceSettingsPanel />)
+      expect(screen.getByRole("switch", { name: /reduce motion/i })).toBeInTheDocument()
+    })
+
     it("renders preview cards by default", () => {
       const { container } = renderWithTheme(<AppearanceSettingsPanel />)
       // Previews are aria-hidden divs

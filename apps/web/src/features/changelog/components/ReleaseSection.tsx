@@ -7,6 +7,7 @@ import { Icon } from "@workspace/ui/components/icon"
 import { createAnchor, formatDate } from "../utils"
 import { ChangelogEntry } from "./ChangelogEntry"
 import type { Release } from "../types"
+import { SITE_URL } from "@/shared/lib/site-identity"
 
 interface ReleaseSectionProps {
   release: Release
@@ -25,7 +26,7 @@ export function ReleaseSection({
   const handleCopyPermalink = async () => {
     const origin =
       typeof window === "undefined"
-        ? "https://so4.market"
+        ? SITE_URL
         : window.location.origin
     const permalink = `${origin}/changelog${anchor}`
     try {

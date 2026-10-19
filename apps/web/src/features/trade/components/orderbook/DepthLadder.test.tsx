@@ -427,4 +427,67 @@ describe("DepthLadder", () => {
       expect(rows.length).toBeGreaterThan(2) // At least header + some data rows
     })
   })
+
+  describe("price-tick flash animation (#873)", () => {
+    it("renders flash-up overlay when row size increases", () => {
+      const { rerender, container } = render(<DepthLadder symbol="TWBTC" />)
+
+      // Initial render - no flash overlay
+      expect(container.querySelector(".so4-flash-up-overlay")).not.toBeInTheDocument()
+
+      // Increase size on first bid
+      mockUseOrderBook.mockReturnValue(createMockState({
+        bids: [
+          { price: 50000, size: 2.5, total: 2.5, depth: 0.6 },
+          { price: 49950, size: 2.3, total: 4.8, depth: 1.0 },
+        ],
+      }))
+
+      rerender(<DepthLadder symbol="TWBTC" />)
+
+      expect(container.querySelector(".so4-flash-up-overlay")).toBeInTheDocument()
+    })
+
+    it("renders flash-down overlay when row size decreases", () => {
+      const { rerender, container } = render(<DepthLadder symbol="TWBTC" />)
+
+      // Decrease size on first bid
+      mockUseOrderBook.mockReturnValue(createMockState({
+        bids: [
+          { price: 50000, size: 0.5, total: 0.5, depth: 0.3 },
+          { price: 49950, size: 2.3, total: 2.8, depth: 1.0 },
+        ],
+      }))
+
+      rerender(<DepthLadder symbol="TWBTC" />)
+
+      expect(container.querySelector(".so4-flash-down-overlay")).toBeInTheDocument()
+    })
+
+    it("renders flash-up overlay on reference price when price increases", () => {
+      const { rerender, container } = render(<DepthLadder symbol="TWBTC" />)
+
+      // Higher mid price
+      mockUseOrderBook.mockReturnValue(createMockState({
+        midPrice: 50050,
+      }))
+
+      rerender(<DepthLadder symbol="TWBTC" />)
+
+      expect(container.querySelector(".so4-flash-up-overlay")).toBeInTheDocument()
+    })
+
+    it("renders flash-down overlay on reference price when price decreases", () => {
+      const { rerender, container } = render(<DepthLadder symbol="TWBTC" />)
+
+      // Lower mid price
+      mockUseOrderBook.mockReturnValue(createMockState({
+        midPrice: 49900,
+      }))
+
+      rerender(<DepthLadder symbol="TWBTC" />)
+
+      expect(container.querySelector(".so4-flash-down-overlay")).toBeInTheDocument()
+    })
+  })
 })

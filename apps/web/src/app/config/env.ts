@@ -9,7 +9,7 @@
  * Usage:
  *   import { ENV } from "@/app/config/env"
  *   console.log(ENV.NETWORK)                   // "testnet" | "mainnet"
- *   console.log(ENV.CONTRACTS.DATA_STORE)      // contract address
+ *   console.log(ENV.RPC_URL)                   // RPC URL endpoint
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,44 +31,13 @@ function optionalEnv(value: string | undefined, fallback = ""): string {
 
 export type Network = "testnet" | "mainnet"
 
-export type EnvContracts = {
-  // ── Core trading contracts ─────────────────────────────────────────────────
-  EXCHANGE_ROUTER: string
-  SYNTHETICS_READER: string
-  DATA_STORE: string
-  MARKET_FACTORY: string
-  DEPOSIT_HANDLER: string
-  WITHDRAWAL_HANDLER: string
-  ORDER_VAULT: string
-  REFERRAL_STORAGE: string
-  FAUCET: string
-  TOKENS: {
-    TUSDC: string
-    TWBTC: string
-    TETH: string
-    TXLM: string
-  }
-  MARKET_TOKENS: {
-    TWBTC_TUSDC: string
-    TETH_TUSDC: string
-    TXLM_TUSDC: string
-  }
-  // ── Infrastructure required by Reader views ───────────────────────────────
-  ORACLE: string
-  ORDER_HANDLER: string
-  // ── Optional — not deployed on all networks yet ───────────────────────────
-  STAKING_ROUTER: string   // "" when not deployed
-  GLV_ROUTER: string       // "" when not deployed
-  VESTING_ROUTER: string   // "" when not deployed
-}
-
 export type Env = {
   NETWORK: Network
   RPC_URL: string
   HORIZON_URL: string
   ORACLE_URL: string
   PYTH_HERMES_URL: string
-  CONTRACTS: EnvContracts
+  INDEXER_GRAPHQL_URL?: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,74 +58,12 @@ export const ENV: Env = {
 
   PYTH_HERMES_URL: optionalEnv(
     import.meta.env.VITE_PYTH_HERMES_URL,
-    "https://hermes.pyth.network",
+    "/api/pyth",
   ),
 
-  CONTRACTS: {
-    EXCHANGE_ROUTER: requireEnv(
-      import.meta.env.VITE_CONTRACT_EXCHANGE_ROUTER,
-      "VITE_CONTRACT_EXCHANGE_ROUTER",
-    ),
-    SYNTHETICS_READER: requireEnv(
-      import.meta.env.VITE_CONTRACT_SYNTHETICS_READER,
-      "VITE_CONTRACT_SYNTHETICS_READER",
-    ),
-    DATA_STORE: requireEnv(
-      import.meta.env.VITE_CONTRACT_DATA_STORE,
-      "VITE_CONTRACT_DATA_STORE",
-    ),
-    MARKET_FACTORY: requireEnv(
-      import.meta.env.VITE_CONTRACT_MARKET_FACTORY,
-      "VITE_CONTRACT_MARKET_FACTORY",
-    ),
-    DEPOSIT_HANDLER: requireEnv(
-      import.meta.env.VITE_CONTRACT_DEPOSIT_HANDLER,
-      "VITE_CONTRACT_DEPOSIT_HANDLER",
-    ),
-    WITHDRAWAL_HANDLER: requireEnv(
-      import.meta.env.VITE_CONTRACT_WITHDRAWAL_HANDLER,
-      "VITE_CONTRACT_WITHDRAWAL_HANDLER",
-    ),
-    ORDER_VAULT: requireEnv(
-      import.meta.env.VITE_CONTRACT_ORDER_VAULT,
-      "VITE_CONTRACT_ORDER_VAULT",
-    ),
-    REFERRAL_STORAGE: requireEnv(
-      import.meta.env.VITE_CONTRACT_REFERRAL_STORAGE,
-      "VITE_CONTRACT_REFERRAL_STORAGE",
-    ),
-    ORACLE: requireEnv(
-      import.meta.env.VITE_CONTRACT_ORACLE,
-      "VITE_CONTRACT_ORACLE",
-    ),
-    ORDER_HANDLER: requireEnv(
-      import.meta.env.VITE_CONTRACT_ORDER_HANDLER,
-      "VITE_CONTRACT_ORDER_HANDLER",
-    ),
-    FAUCET: requireEnv(import.meta.env.VITE_FAUCET, "VITE_FAUCET"),
-    TOKENS: {
-      TUSDC: requireEnv(import.meta.env.VITE_TOKEN_TUSDC, "VITE_TOKEN_TUSDC"),
-      TWBTC: requireEnv(import.meta.env.VITE_TOKEN_TWBTC, "VITE_TOKEN_TWBTC"),
-      TETH: requireEnv(import.meta.env.VITE_TOKEN_TETH, "VITE_TOKEN_TETH"),
-      TXLM: requireEnv(import.meta.env.VITE_TOKEN_TXLM, "VITE_TOKEN_TXLM"),
-    },
-    MARKET_TOKENS: {
-      TWBTC_TUSDC: requireEnv(
-        import.meta.env.VITE_MARKET_TOKEN_TWBTC_TUSDC,
-        "VITE_MARKET_TOKEN_TWBTC_TUSDC",
-      ),
-      TETH_TUSDC: requireEnv(
-        import.meta.env.VITE_MARKET_TOKEN_TETH_TUSDC,
-        "VITE_MARKET_TOKEN_TETH_TUSDC",
-      ),
-      TXLM_TUSDC: requireEnv(
-        import.meta.env.VITE_MARKET_TOKEN_TXLM_TUSDC,
-        "VITE_MARKET_TOKEN_TXLM_TUSDC",
-      ),
-    },
-    // Optional — empty string signals "not deployed yet"
-    STAKING_ROUTER: optionalEnv(import.meta.env.VITE_CONTRACT_STAKING_ROUTER),
-    GLV_ROUTER:     optionalEnv(import.meta.env.VITE_CONTRACT_GLV_ROUTER),
-    VESTING_ROUTER: optionalEnv(import.meta.env.VITE_CONTRACT_VESTING_ROUTER),
-  },
+  INDEXER_GRAPHQL_URL: optionalEnv(
+    import.meta.env.VITE_INDEXER_GRAPHQL_URL,
+    "",
+  ),
 }
+

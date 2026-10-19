@@ -30,10 +30,7 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/80 duration-100 supports-backdrop-filter:backdrop-blur-xs",
-        "data-open:animate-in data-open:fade-in-0",
-        "data-closed:animate-out data-closed:fade-out-0",
-        "motion-reduce:duration-0 motion-reduce:data-open:animate-none motion-reduce:data-closed:animate-none",
+        "so4-dialog-overlay fixed inset-0 isolate z-50 bg-black/80 supports-backdrop-filter:backdrop-blur-xs",
         className
       )}
       {...props}
@@ -57,7 +54,7 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           // Positioning & sizing
-          "fixed top-1/2 inset-inline-start-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2",
+          "fixed top-1/2 inset-inline-start-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 origin-(--transform-origin)",
           // Mobile: cap height so content scrolls inside rather than overflowing the viewport
           "max-h-[calc(100dvh-2rem)] overflow-x-hidden overflow-y-auto",
           // Layout, surface, typography
@@ -68,10 +65,7 @@ function DialogContent({
           // Desktop max-width default
           "sm:max-w-sm",
           // Enter / exit animations
-          "duration-100",
-          "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
-          "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          "motion-reduce:duration-0 motion-reduce:data-open:animate-none motion-reduce:data-closed:animate-none",
+          "so4-dialog-content",
           className
         )}
         {...props}

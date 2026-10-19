@@ -8,6 +8,7 @@ import { useTradeState } from "../hooks/useTradeState"
 import { useOrderEventPolling } from "../hooks/useOrderEventPolling"
 import { useBoundedChartHeight } from "../hooks/useBoundedChartHeight"
 import { useLayoutPreferencesStore } from "../store/layout-preferences-store"
+import { seedLimitTicketPrice } from "../lib/orderbook/seed-limit-ticket"
 import { Navbar } from "../../../ui/Navbar"
 import { TVChart } from "./chart/TVChart"
 import { TradePanel } from "./trade-panel/TradePanel"
@@ -127,7 +128,18 @@ export function TradePage() {
               style={{ ["--book-width" as string]: `${bookWidth}px` }}
             >
               <PanelErrorBoundary panel="market depth">
-                <OrderBookPanel symbol={trade.toTokenAddress} />
+                <OrderBookPanel symbol={trade.toTokenAddress}
+                  activeMarketId={trade.marketAddress}
+                  onSeedLimitPrice={(selection) => {
+                    seedLimitTicketPrice({
+                      selection,
+                      currentMarketId: trade.marketAddress,
+                      tradeMode: trade.tradeMode,
+                      tradeType: trade.tradeType,
+                      setTriggerPrice: trade.setTriggerPrice,
+                    })
+                  }}
+                />
               </PanelErrorBoundary>
             </aside>
           </div>

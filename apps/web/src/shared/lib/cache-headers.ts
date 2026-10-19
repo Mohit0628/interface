@@ -115,7 +115,13 @@ export function getNitroRouteRules(): Record<string, NitroRouteRule> {
   const staticDataHeader = getCacheControlHeader("public-static-data")
 
   return {
-    // Immutable hashed assets
+    // Immutable hashed assets. Extension globs such as `/**/*.woff2` are not
+    // valid rou3 (h3 2.x router) patterns — a route may contain only one
+    // wildcard token — and they never matched: Vite emits every hashed asset
+    // (fonts, images, icons) under /assets, so the directory rule covers
+    // those requests. Non-hashed files served from the public directory keep
+    // stable URLs, so they deliberately fall through to the document rule:
+    // caching them as immutable would pin stale bytes for a year.
     "/assets/**": {
       headers: { "cache-control": immutableHeader },
     },
@@ -123,18 +129,6 @@ export function getNitroRouteRules(): Record<string, NitroRouteRule> {
       headers: { "cache-control": immutableHeader },
     },
     "/build/**": {
-      headers: { "cache-control": immutableHeader },
-    },
-    "/**/*.woff2": {
-      headers: { "cache-control": immutableHeader },
-    },
-    "/**/*.png": {
-      headers: { "cache-control": immutableHeader },
-    },
-    "/**/*.svg": {
-      headers: { "cache-control": immutableHeader },
-    },
-    "/**/*.ico": {
       headers: { "cache-control": immutableHeader },
     },
 

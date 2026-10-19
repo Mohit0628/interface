@@ -51,3 +51,5 @@ test-results/
 # Generated OG images
 apps/docs/public/og/
 .nitro-static/og/
+# Editor swap files
+*.swp

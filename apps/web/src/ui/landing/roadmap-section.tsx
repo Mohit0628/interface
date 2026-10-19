@@ -1,5 +1,6 @@
 import { Quarter } from "./quarter"
 import type { QuarterData } from "./quarter"
+import { REPO_URL } from "@/shared/lib/site-identity"
 
 // No dated roadmap exists in the repo — GMX's quarter labels (Q1..Q4) imply
 // specific committed dates, which would be a fabricated public promise if
@@ -48,7 +49,7 @@ export function RoadmapSection() {
           {/* No dev-plan writeup exists yet — links to the source repo,
               a real destination, rather than a dead "#" anchor. */}
           <a
-            href="https://github.com/Levee-HQ/interface"
+            href={REPO_URL}
             target="_blank"
             rel="noreferrer"
             className="btn-landing hidden shrink-0 rounded-8 px-4 py-2.5 text-14 sm:inline-flex"
@@ -74,7 +75,7 @@ export function RoadmapSection() {
         </div>
 
         <a
-          href="https://github.com/Levee-HQ/interface"
+          href={REPO_URL}
           target="_blank"
           rel="noreferrer"
           className="btn-landing mt-6 flex w-full items-center justify-center rounded-8 px-4 py-2.5 text-14 sm:hidden"

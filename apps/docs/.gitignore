@@ -4,3 +4,6 @@
 # DX-050: version snapshots are reproducible via scripts/snapshot-version.ts
 # and are not authored content — see that script's header comment.
 content-versions/
+
+# Lighthouse CI generated reports and assertion results
+.lighthouseci/

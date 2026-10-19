@@ -10,6 +10,7 @@ function TestRelease({ ready = true }: { ready?: boolean }) {
 afterEach(() => {
   window.history.replaceState(null, "", "/")
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe("useReleaseHash", () => {
@@ -17,9 +18,11 @@ describe("useReleaseHash", () => {
     window.history.replaceState(null, "", "/changelog#v0-4-0")
     const scrollIntoView = vi.fn()
     Element.prototype.scrollIntoView = scrollIntoView
-    vi.spyOn(window, "matchMedia").mockReturnValue({
-      matches: false,
-    } as MediaQueryList)
+    // jsdom does not implement matchMedia, so stub it rather than spy on it.
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({ matches: false }),
+    )
 
     const { container } = render(<TestRelease />)
     const release = container.querySelector("#v0-4-0")
@@ -35,9 +38,11 @@ describe("useReleaseHash", () => {
     window.history.replaceState(null, "", "/changelog#v0-4-0")
     const scrollIntoView = vi.fn()
     Element.prototype.scrollIntoView = scrollIntoView
-    vi.spyOn(window, "matchMedia").mockReturnValue({
-      matches: true,
-    } as MediaQueryList)
+    // jsdom does not implement matchMedia, so stub it rather than spy on it.
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({ matches: true }),
+    )
 
     render(<TestRelease />)
 

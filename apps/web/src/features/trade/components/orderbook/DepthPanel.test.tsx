@@ -1,7 +1,7 @@
 import { useEffect } from "react"
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { useOrderBookDisplayStore } from "../../store/orderbook-display-store"
 import { DepthPanel } from "./DepthPanel"
 import type { SourceHealth } from "../../hooks/useSourceHealth"
@@ -307,5 +307,75 @@ describe("empty and crossed books", () => {
   it("marks a crossed book instead of showing a negative spread", () => {
     render(<DepthPanel metadata={BTC} bids={[L(10_010n, 1n)]} asks={[L(10_000n, 1n)]} rows={4} />)
     expect(screen.getByRole("separator", { name: "Spread" })).toHaveTextContent("crossed")
+  })
+})
+
+describe("verified limit-price selection (OB-055)", () => {
+  it("seeds the exact canonical price by mouse without submitting an order", async () => {
+    const seed = vi.fn()
+    const user = userEvent.setup({ delay: null })
+    useOrderBookDisplayStore.getState().setGrouping(BTC, 5)
+    render(
+      <DepthPanel metadata={BTC} bids={BIDS} asks={ASKS} rows={8} health={LIVE}
+        activeMarketId="BTC-USD" feedActionable bookRevision={42n}
+        onSeedLimitPrice={seed} />,
+    )
+    const row = screen.getByRole("button", { name: /select exact bid limit price from 100.05/i })
+    await user.click(row)
+    expect(seed).toHaveBeenCalledExactlyOnceWith({
+      marketId: "BTC-USD", side: "bid", price: "100.07",
+    })
+    expect(screen.getByRole("status")).toHaveTextContent(/order not submitted/i)
+  })
+
+  it("supports keyboard selection and leaves order direction under user control", async () => {
+    const seed = vi.fn()
+    const user = userEvent.setup({ delay: null })
+    render(
+      <DepthPanel metadata={BTC} bids={BIDS} asks={ASKS} rows={8} health={LIVE}
+        activeMarketId="BTC-USD" feedActionable bookRevision={42n}
+        onSeedLimitPrice={seed} />,
+    )
+    const row = screen.getByRole("button", { name: /select exact ask limit price from 100.08/i })
+    row.focus()
+    await user.keyboard("{Enter}")
+    expect(seed).toHaveBeenCalledExactlyOnceWith({
+      marketId: "BTC-USD", side: "ask", price: "100.08",
+    })
+  })
+
+  it("never allows stale or wrong-market rows to seed", async () => {
+    const seed = vi.fn()
+    const user = userEvent.setup({ delay: null })
+    const props = { metadata: BTC, bids: BIDS, asks: ASKS, rows: 8, health: LIVE,
+      activeMarketId: "ETH-USD", feedActionable: true, bookRevision: 42n,
+      onSeedLimitPrice: seed }
+    const { rerender } = render(<DepthPanel {...props} />)
+    expect(screen.queryByRole("button", { name: /select exact bid/i })).not.toBeInTheDocument()
+    rerender(<DepthPanel {...props} activeMarketId="BTC-USD"
+      health={{ ...LIVE, isExecutable: false }} />)
+    expect(screen.queryByRole("button", { name: /select exact bid/i })).not.toBeInTheDocument()
+    rerender(<DepthPanel {...props} activeMarketId="BTC-USD" bookRevision={null} />)
+    expect(screen.queryByRole("button", { name: /select exact bid/i })).not.toBeInTheDocument()
+    await user.click(screen.getAllByRole("row").at(-1)!)
+    expect(seed).not.toHaveBeenCalled()
+  })
+})
+
+describe("interrupted price selection (OB-055)", () => {
+  it("does not apply a price if a depth revision changes between pointer-down and click", () => {
+    const seed = vi.fn()
+    useOrderBookDisplayStore.getState().setGrouping(BTC, 5)
+    const props = { metadata: BTC, bids: BIDS, asks: ASKS, rows: 8,
+      health: LIVE, activeMarketId: "BTC-USD", feedActionable: true,
+      bookRevision: 42n, onSeedLimitPrice: seed }
+    const { rerender } = render(<DepthPanel {...props} />)
+    const button = screen.getByRole("button", { name: /select exact bid limit price from 100.05/i })
+    fireEvent.pointerDown(button)
+    rerender(<DepthPanel {...props} bids={BIDS.map((level) =>
+      level.price === 10_007n ? { ...level, price: 10_006n } : level,
+    )} bookRevision={43n} />)
+    fireEvent.click(button)
+    expect(seed).not.toHaveBeenCalled()
   })
 })

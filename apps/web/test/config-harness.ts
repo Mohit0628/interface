@@ -26,14 +26,6 @@ export const VALID_ENV: Record<string, string> = {
   VITE_NETWORK: "testnet",
   VITE_RPC_URL: "https://rpc.example.test",
   VITE_HORIZON_URL: "https://horizon.example.test",
-  VITE_CONTRACT_EXCHANGE_ROUTER: "CEXCHANGE",
-  VITE_CONTRACT_SYNTHETICS_READER: "CSYNTHETICS",
-  VITE_CONTRACT_DATA_STORE: "CDATASTORE",
-  VITE_CONTRACT_ORDER_VAULT: "CORDERVAULT",
-  VITE_CONTRACT_STAKING_ROUTER: "CSTAKING",
-  VITE_CONTRACT_GLV_ROUTER: "CGLV",
-  VITE_CONTRACT_VESTING_ROUTER: "CVESTING",
-  VITE_CONTRACT_REFERRAL_STORAGE: "CREFERRAL",
 }
 
 /** Every VITE_ key this harness ever touches (used to scrub inherited env). */

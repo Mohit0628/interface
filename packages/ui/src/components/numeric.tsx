@@ -1,6 +1,7 @@
 import { cva } from 'class-variance-authority'
 import { cn } from '@workspace/ui/lib/utils'
 import { useNumericChangeFeedback } from '../hooks/use-numeric-change-feedback'
+import { RollingNumber } from './rolling-number'
 import type { VariantProps } from 'class-variance-authority'
 
 const numericVariants = cva('font-mono tabular-nums', {
@@ -164,6 +165,7 @@ interface NumericProps {
   threshold?: number
   highlightOnChange?: boolean
   coalesceMs?: number
+  rolling?: boolean
   className?: string
 }
 
@@ -179,6 +181,7 @@ function Numeric({
   threshold,
   highlightOnChange = false,
   coalesceMs = 500,
+  rolling = false,
   className,
 }: NumericProps) {
   const { className: emphasisClassName } = useNumericChangeFeedback({
@@ -210,7 +213,7 @@ function Numeric({
       data-slot="numeric"
       className={cn(numericVariants({ role }), highlightOnChange && emphasisClassName, className)}
     >
-      {display}
+      {rolling ? <RollingNumber value={display} /> : display}
     </span>
   )
 }

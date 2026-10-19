@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
+import { useReducedMotion } from "@/lib/use-reduced-motion"
 
 /*
  * Order book preview (OB-024).
@@ -25,23 +26,6 @@ const LEVELS = [
 const SPARK = [12, 18, 15, 22, 19, 26, 24, 31, 28, 34, 30, 37] as const
 
 const TICK_MS = 2600
-
-function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  )
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const update = () => setReduced(query.matches)
-    query.addEventListener("change", update)
-    return () => query.removeEventListener("change", update)
-  }, [])
-
-  return reduced
-}
 
 /** Whether the panel is in the viewport and the page is visible. */
 function usePreviewActive() {
@@ -144,7 +128,7 @@ export function OrderbookPreview() {
               {levels.map((level, index) => (
                 <li
                   key={`${level.price}-${index}`}
-                  className="motion-safe:transition-transform motion-safe:duration-300"
+                  className="motion-safe:transition-transform motion-safe:duration-slow"
                 >
                   <div className="flex items-center justify-between text-12">
                     <span className="text-gmx-slate-300">{level.price}</span>

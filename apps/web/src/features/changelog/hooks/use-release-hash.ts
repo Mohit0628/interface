@@ -7,9 +7,9 @@ function focusHashTarget() {
   const target = document.getElementById(window.location.hash.slice(1))
   if (!target) return
 
-  const reducedMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-  ).matches
+  const reducedMotion =
+    document.documentElement.dataset.reducedMotion === "true" ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
   target.scrollIntoView({
     behavior: reducedMotion ? "auto" : "smooth",
