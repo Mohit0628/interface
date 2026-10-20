@@ -50,7 +50,6 @@ export function OrdersList() {
     setCancelling(order.key)
     try {
       await cancelOrder(order.account, toOrderKey(order))
-      setDialogOpen(false)
     } finally {
       setCancelling(null)
     }
