@@ -117,6 +117,12 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
 
+      # e2e/docs-navigation.spec.ts spawns the docs production server itself
+      # (apps/docs/.output/server/index.mjs) and waits on 127.0.0.1:3005, so
+      # the build output has to exist before the suite runs.
+      - name: Build docs for the docs E2E server
+        run: bun run --cwd apps/docs build
+
       - name: Run Playwright tests
         run: bun run test:e2e
 
