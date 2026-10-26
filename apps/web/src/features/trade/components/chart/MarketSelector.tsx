@@ -151,7 +151,6 @@ export function MarketSelector({ symbol, onSelect }: Props) {
       "startViewTransition" in document &&
       !prefersReduced
     ) {
-      // @ts-expect-error View Transitions API
       document.startViewTransition(() => {
         onSelect(market.indexTokenAddress)
         closeAndRestoreFocus()
