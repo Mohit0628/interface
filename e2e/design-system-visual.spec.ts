@@ -74,13 +74,17 @@ for (const theme of THEMES) {
           window.localStorage.setItem("so4-theme", t)
         }, theme)
         await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") })
-        await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"))
       })
 
       for (const route of ROUTES) {
         test(`${route.name}`, async ({ page }) => {
           await page.goto(route.path)
           await page.waitForLoadState("networkidle")
+          // Data-backed routes render a spinner until their query resolves, and
+          // a frozen clock stops that resolution ever being scheduled — so wait
+          // for real content first, then freeze time for the screenshot.
+          await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible()
+          await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"))
 
           await expect(page).toHaveScreenshot(`${route.name}-${theme}-${viewportName}.png`, {
             fullPage: true,

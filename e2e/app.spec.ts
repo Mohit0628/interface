@@ -19,7 +19,6 @@ test("landing page loads with hero content", async ({ page }) => {
   await expect(heading).toContainText("Trade")
   await expect(heading).toContainText("on verified order book")
 
-  // Primary CTA buttons
-  await expect(page.getByRole("button", { name: /start trading/i })).toBeVisible()
-  await expect(page.getByRole("button", { name: /read the litepaper/i })).toBeVisible()
+  // Primary CTA — a router link to /trade, labelled "Trade now".
+  await expect(page.getByRole("link", { name: /trade now/i }).first()).toBeVisible()
 })

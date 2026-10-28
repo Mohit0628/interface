@@ -158,7 +158,7 @@ test.describe("DX-059: Documentation navigation, search, and reader flows", () =
     } else {
       // Direct navigation verification for static routes
       await page.goto(`${DOCS_BASE_URL}/developers/architecture#contracts`)
-      const heading = page.locator("#contracts, #1-contracts, h2:has-text('Contracts'), h3:has-text('Contracts')").first()
+      const heading = page.locator("#contracts, [id='1-contracts'], h2:has-text('Contracts'), h3:has-text('Contracts')").first()
       await expect(heading).toBeInViewport()
     }
   })
@@ -195,7 +195,7 @@ test.describe("DX-059: Documentation navigation, search, and reader flows", () =
     await page.goto(`${DOCS_BASE_URL}/developers/architecture#1-contracts`)
     await page.waitForLoadState("domcontentloaded")
 
-    const heading = page.locator("#1-contracts, #contracts, h3:has-text('1. Contracts')").first()
+    const heading = page.locator("[id='1-contracts'], #contracts, h3:has-text('1. Contracts')").first()
     await expect(heading).toBeVisible()
 
     // Assert that the heading is scrolled into the viewport

@@ -23,12 +23,15 @@ for (const theme of THEMES) {
           window.localStorage.setItem("so4-theme", t)
         }, theme)
         await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") })
-        await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"))
       })
 
       test(`idle workspace`, async ({ page }) => {
         await page.goto("/trade")
         await page.waitForLoadState("networkidle")
+        // The workspace is query-driven; a frozen clock would keep it on its
+        // skeleton forever. Wait for the ticket, then freeze.
+        await expect(page.getByRole("tab", { name: "Long" })).toBeVisible()
+        await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"))
         await expect(page).toHaveScreenshot(
           `trade-workspace-${theme}-${viewportName}.png`,
           { fullPage: true, animations: "disabled" },
@@ -38,6 +41,8 @@ for (const theme of THEMES) {
       test(`long ticket selected`, async ({ page }) => {
         await page.goto("/trade")
         await page.waitForLoadState("networkidle")
+        await expect(page.getByRole("tab", { name: "Long" })).toBeVisible()
+        await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"))
         await page.getByRole("tab", { name: "Long" }).click()
         await expect(page).toHaveScreenshot(
           `trade-long-${theme}-${viewportName}.png`,

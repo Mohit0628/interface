@@ -82,7 +82,7 @@ test.describe("trade long-session regression", () => {
     }
 
     const baseline = await sample()
-    const panels = ["positions", "orders", "history"] as const
+    const panels = ["positions", "orders", "order history"] as const
 
     for (let i = 0; i < 12; i += 1) {
       const panel = panels[i % panels.length]
