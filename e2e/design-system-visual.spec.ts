@@ -33,14 +33,17 @@ const VIEWPORTS = {
 const THEMES = ["light", "dark"] as const
 const DIRECTIONS = ["ltr", "rtl"] as const
 
+// `ready` is what proves the route has painted real content. The trade
+// workspace has no <h1> (its heading lives in the navbar), so it waits on the
+// ticket's tablist instead of a heading.
 const ROUTES = [
-  { name: "gallery", path: "/gallery" },
-  { name: "landing", path: "/" },
-  { name: "trade", path: "/trade" },
-  { name: "pools", path: "/pools" },
-  { name: "earn", path: "/earn" },
-  { name: "referrals", path: "/referrals" },
-  { name: "faucet", path: "/faucet" },
+  { name: "gallery", path: "/gallery", ready: "h1" },
+  { name: "landing", path: "/", ready: "h1" },
+  { name: "trade", path: "/trade", ready: '[data-slot="app-shell-content"]' },
+  { name: "pools", path: "/pools", ready: "h1" },
+  { name: "earn", path: "/earn", ready: "h1" },
+  { name: "referrals", path: "/referrals", ready: "h1" },
+  { name: "faucet", path: "/faucet", ready: "h1" },
 ] as const
 
 async function stubExternalNetwork(page: Page) {
@@ -75,8 +78,9 @@ for (const theme of THEMES) {
         test(`${route.name}`, async ({ page }) => {
           await page.goto(route.path)
           await page.waitForLoadState("networkidle")
-          // Data-backed routes render a spinner until their query resolves.
-          await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible()
+          // Data-backed routes render a spinner until their query resolves, so
+          // wait for the route's own content before capturing.
+          await expect(page.locator(route.ready).first()).toBeVisible()
 
           await expect(page).toHaveScreenshot(`${route.name}-${theme}-${viewportName}.png`, {
             fullPage: true,
