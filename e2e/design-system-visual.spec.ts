@@ -57,15 +57,11 @@ async function stubExternalNetwork(page: Page) {
 for (const theme of THEMES) {
   for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
     test.describe(`${theme} theme, ${viewportName}`, () => {
-      // reducedMotion: "reduce" *should* stop JS-timer-driven animations
-      // that `animations: "disabled"` can't freeze (e.g. the landing
-      // hero's word-rotation interval and the community marquee), but
-      // this Chrome Headless Shell build doesn't reflect it in
-      // matchMedia() or CSS @media queries (verified: both read false
-      // even with this set) — kept anyway as the semantically correct
-      // setting for engines that do honor it. The actual freeze comes
-      // from page.clock below, which stops those timers from ever firing
-      // by fixing the clock before any script runs.
+      // reducedMotion: "reduce" is the semantically correct setting for the
+      // timer-driven animations `animations: "disabled"` can't freeze (the
+      // landing hero's word rotation, the community marquee). The fake clock
+      // this spec used to install for that is gone: it froze time for the
+      // whole page, so every data-backed route stayed on its loading spinner.
       test.use({ viewport, reducedMotion: "reduce" })
 
       test.beforeEach(async ({ page }) => {
@@ -73,18 +69,14 @@ for (const theme of THEMES) {
         await page.addInitScript((t) => {
           window.localStorage.setItem("so4-theme", t)
         }, theme)
-        await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") })
       })
 
       for (const route of ROUTES) {
         test(`${route.name}`, async ({ page }) => {
           await page.goto(route.path)
           await page.waitForLoadState("networkidle")
-          // Data-backed routes render a spinner until their query resolves, and
-          // a frozen clock stops that resolution ever being scheduled — so wait
-          // for real content first, then freeze time for the screenshot.
+          // Data-backed routes render a spinner until their query resolves.
           await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible()
-          await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"))
 
           await expect(page).toHaveScreenshot(`${route.name}-${theme}-${viewportName}.png`, {
             fullPage: true,
