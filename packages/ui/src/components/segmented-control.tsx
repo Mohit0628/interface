@@ -13,7 +13,7 @@ export type SegmentedControlOption<T extends string = string> = {
 export type SegmentedControlProps<T extends string = string> = {
   value: T
   onChange: (value: T) => void
-  options: SegmentedControlOption<T>[]
+  options: Array<SegmentedControlOption<T>>
   className?: string
   thumbClassName?: string
   size?: "sm" | "default" | "lg"
@@ -37,7 +37,7 @@ export function SegmentedControl<T extends string = string>({
   const optionRefs = React.useRef<Map<string, HTMLButtonElement>>(new Map())
 
   const activeIndex = options.findIndex((opt) => opt.value === value)
-  const activeOption = options[activeIndex]
+  const activeOption = options.find((opt) => opt.value === value)
 
   React.useLayoutEffect(() => {
     const el = optionRefs.current.get(value)
