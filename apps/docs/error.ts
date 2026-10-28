@@ -1,9 +1,10 @@
-import { defineErrorHandler } from "nitro/app"
+import { defineErrorHandler } from "nitro"
 
 /**
  * Docs production error handler.
  *
- * Nitro 3 renamed the helper (`defineErrorHandler`) and reversed the signature
+ * Nitro 3 exports the helper as `defineErrorHandler` from the package root
+ * and reversed the signature
  * (error first, then the event). This file previously imported
  * `defineNitroErrorHandler` from `nitropack/runtime` — a Nitro 2 path that
  * survived the build as a bare specifier, so the built server could not start
