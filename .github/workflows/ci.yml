@@ -25,7 +25,14 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Audit locked dependencies
-        run: bun audit --audit-level=high
+        # GHSA-mrhx-c7xc-m3w5 (zod < 4.6.6) is a recorded exception, not a fix.
+        # The only remedy is zod 4, and forcing it onto the zod-3-only consumers
+        # breaks them for real: @pythnetwork/hermes-client (zodios, the runtime
+        # price oracle) loses its inferred types and @modelcontextprotocol/sdk
+        # throws `def._def.defaultValue is not a function` during the indexer
+        # build. Every other high advisory is fixed in the lockfile.
+        # Revisit when those packages publish zod-4 support.
+        run: bun audit --audit-level=high --ignore=GHSA-mrhx-c7xc-m3w5
 
   ci:
     name: Lint · Typecheck · Build
@@ -116,6 +123,12 @@ jobs:
 
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
+
+      # e2e/docs-navigation.spec.ts spawns the docs production server itself
+      # (apps/docs/.output/server/index.mjs) and waits on 127.0.0.1:3005, so
+      # the build output has to exist before the suite runs.
+      - name: Build docs for the docs E2E server
+        run: bun run --cwd apps/docs build
 
       - name: Run Playwright tests
         run: bun run test:e2e
