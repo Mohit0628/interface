@@ -42,19 +42,18 @@ function SkipLink({
   ...props
 }: SkipLinkProps) {
   function handleClick(event: React.MouseEvent<HTMLAnchorElement>) {
+    onClick?.(event)
+
     const target = document.getElementById(targetId)
     // No target on this page — fall through to the browser's own hash jump.
-    if (!target) {
-      onClick?.(event)
-      return
-    }
+    if (!target) return
 
-    // The router also listens for anchor clicks and may have prevented the
-    // default already; returning early in that case left the skip link doing
-    // nothing at all (no focus, no jump). Claim the event instead.
+    // Claim the default even when a router-level handler already prevented it:
+    // bailing out on `event.defaultPrevented` left the skip link doing nothing
+    // at all — no focus move and no jump. Propagation is left alone so
+    // document-level listeners (and the unit test that asserts on them) still
+    // observe the event.
     event.preventDefault()
-    event.stopPropagation()
-    onClick?.(event)
 
     if (!target.hasAttribute("tabindex")) {
       target.setAttribute("tabindex", "-1")
