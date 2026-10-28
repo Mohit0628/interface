@@ -139,12 +139,12 @@ jobs:
       # then get committed. Also available as a manual workflow
       # (.github/workflows/e2e-baselines.yml) once it is on the default branch.
       - name: Rewrite screenshot baselines
-        if: ${{ vars.E2E_UPDATE_SNAPSHOTS == 'true' }}
+        if: ${{ always() && vars.E2E_UPDATE_SNAPSHOTS == 'true' }}
         run: |
           bunx playwright test --update-snapshots docs-visual design-system-visual trade-workspace-visual changelog-visual landing-responsive || true
 
       - name: Upload screenshot baselines
-        if: ${{ vars.E2E_UPDATE_SNAPSHOTS == 'true' }}
+        if: ${{ always() && vars.E2E_UPDATE_SNAPSHOTS == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: e2e-snapshots

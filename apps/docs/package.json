@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun run scripts/build.ts && bunx --bun pagefind --site .nitro-static && bunx nitro build",
+    "build": "bun run scripts/build.ts && bunx --bun pagefind --site .nitro-static && nitro build",
     "dev": "bun run scripts/build.ts && bunx nitro dev",
     "lint": "bun run check:content && bun run lint:prose",
     "lint:prose": "bun run scripts/lint-prose.ts",
