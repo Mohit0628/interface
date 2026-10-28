@@ -145,11 +145,8 @@ for (const width of widths) {
         contentType: "application/json",
       })
 
-      await cta.click()
-      await expect(page).toHaveURL(/\/trade$/)
-      await expect(page.getByRole("tab", { name: "Long" })).toBeVisible({
-        timeout: 15_000,
-      })
+      // Nothing on the landing page may still be animating once the journey is
+      // done. Asserted before leaving the page — /trade has its own animations.
       await expect
         .poll(() =>
           page.evaluate(
@@ -160,6 +157,17 @@ for (const width of widths) {
           )
         )
         .toBe(0)
+
+      await cta.click()
+      await expect(page).toHaveURL(/\/trade$/)
+
+      // Below lg the trading regions are stacked behind the mobile switcher.
+      if (width < 1024) {
+        await page.getByRole("tab", { name: "Trade", exact: true }).click()
+      }
+      await expect(page.getByRole("tab", { name: "Long" })).toBeVisible({
+        timeout: 15_000,
+      })
     })
   }
 }

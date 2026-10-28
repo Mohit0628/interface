@@ -38,9 +38,11 @@ export function OrderBookPanel({ symbol, verifiedDepth, activeMarketId, onSeedLi
     <div className="flex h-full w-full flex-col overflow-hidden">
       {/* ── Panel Header Tabs ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" role="tablist" aria-label="Order book views">
           <button
             type="button"
+            id={`orderbook-tab-book`}
+            aria-controls="orderbook-tabpanel"
             onClick={() => setOrderbookView("book")}
             className={`rounded px-2 py-1 font-mono text-xs font-semibold transition-colors ${
               orderbookView === "book"
@@ -54,6 +56,8 @@ export function OrderBookPanel({ symbol, verifiedDepth, activeMarketId, onSeedLi
           </button>
           <button
             type="button"
+            id={`orderbook-tab-trades`}
+            aria-controls="orderbook-tabpanel"
             onClick={() => setOrderbookView("trades")}
             className={`rounded px-2 py-1 font-mono text-xs font-semibold transition-colors ${
               orderbookView === "trades"
@@ -67,6 +71,8 @@ export function OrderBookPanel({ symbol, verifiedDepth, activeMarketId, onSeedLi
           </button>
           <button
             type="button"
+            id={`orderbook-tab-chart`}
+            aria-controls="orderbook-tabpanel"
             onClick={() => setOrderbookView("chart")}
             className={`rounded px-2 py-1 font-mono text-xs font-semibold transition-colors ${
               orderbookView === "chart"
@@ -86,7 +92,12 @@ export function OrderBookPanel({ symbol, verifiedDepth, activeMarketId, onSeedLi
       </div>
 
       {/* ── Tab Content ──────────────────────────────────────────────────── */}
-      <div className="min-h-0 flex-1">
+      <div
+        id="orderbook-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`orderbook-tab-${orderbookView}`}
+        className="min-h-0 flex-1"
+      >
         {orderbookView === "book" ? (
           verifiedDepth && verifiedDepth.actionable && verifiedDepth.health.isExecutable &&
           activeMarketId === verifiedDepth.metadata.marketId ? (

@@ -12,6 +12,9 @@ test.beforeEach(async ({ page }) => {
 test("mobile menu navigates between app routes and updates content", async ({ page }) => {
   await page.goto("/trade")
 
+  // Narrow viewports show one trading region at a time; the ticket lives behind
+  // the "Trade" tab of the mobile panel switcher.
+  await page.getByRole("tab", { name: "Trade", exact: true }).click()
   await expect(page.getByRole("tab", { name: "Long" })).toBeVisible()
   await expect(page.getByText("Price", { exact: true })).toBeVisible()
 

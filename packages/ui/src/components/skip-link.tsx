@@ -68,10 +68,10 @@ function SkipLink({
       href={`#${targetId}`}
       onClick={handleClick}
       className={cn(
-        "sr-only rounded-md border border-border bg-surface-raised px-4 py-2 text-sm font-medium text-foreground shadow-md",
+        "sr-only rounded-md border border-border bg-surface-raised text-sm font-medium text-foreground shadow-md",
         // `sr-only` is already absolute; focus only has to undo the clipping
         // and pin the link somewhere visible above the sticky navbar.
-        "focus:fixed focus:top-4 focus:left-4 focus:z-100 focus:m-0 focus:size-auto focus:overflow-visible focus:whitespace-nowrap focus:[clip:auto] focus:[clip-path:none]",
+        "focus:fixed focus:top-4 focus:left-4 focus:z-100 focus:m-0 focus:size-auto focus:overflow-visible focus:whitespace-nowrap focus:[clip:auto] focus:[clip-path:none] focus:px-4 focus:py-2",
         "focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background focus:outline-none",
         className
       )}

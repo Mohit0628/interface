@@ -29,7 +29,7 @@ test("referrals page shows sidebar with FAQ and quick links", async ({
 
   await expect(page.getByText("How it works")).toBeVisible()
   await expect(page.getByText("Claiming rewards")).toBeVisible()
-  await expect(page.getByText("Tiers")).toBeVisible()
+  await expect(page.getByRole("link", { name: "Tiers" })).toBeVisible()
 })
 
 test("referrals page sidebar shows disconnected state for referral code", async ({

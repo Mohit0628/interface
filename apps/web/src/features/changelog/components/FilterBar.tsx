@@ -118,6 +118,7 @@ export function FilterBar({
                 {CHANGELOG_TYPES.map((type) => (
                   <Badge
                     key={type}
+                    data-type={type}
                     variant={search.type === type ? "default" : "outline"}
                     size="sm"
                     className="h-9 cursor-pointer px-3 py-1 transition-all-subtle focus-visible:ring-2"
@@ -220,6 +221,7 @@ export function FilterBar({
           {CHANGELOG_TYPES.map((type) => (
             <Badge
               key={type}
+              data-type={type}
               variant={search.type === type ? "default" : "outline"}
               size="sm"
               className="h-9 cursor-pointer px-3 py-1 transition-all-subtle focus-visible:ring-2"

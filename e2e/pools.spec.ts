@@ -36,7 +36,7 @@ test("pools page is reachable with no external network dependency", async ({ pag
   await expect(page.getByRole("tab", { name: "30D", exact: true })).toBeVisible()
   await expect(page.getByRole("tab", { name: "90D" })).toBeVisible()
   await expect(page.getByRole("tab", { name: "30D", exact: true })).toHaveAttribute(
-    "data-state",
-    "active",
+    "aria-selected",
+    "true",
   )
 })

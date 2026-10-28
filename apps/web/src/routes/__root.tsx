@@ -9,6 +9,7 @@ import { ToastProvider } from "@workspace/ui/components/toast"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { DensityProvider } from "@workspace/ui/components/density-provider"
 import appCss from "@workspace/ui/globals.css?url"
+import { useEffect } from "react"
 import { AppProviders } from "../app/providers"
 import { SITE_NAME, SITE_URL, SOCIAL_URLS } from "../shared/lib/site-identity"
 import { RouteAnnouncer } from "../shared/components/RouteAnnouncer"
@@ -158,6 +159,12 @@ export const Route = createRootRoute({
 // Sits above every route so the post-navigation focus/announcement handoff
 // (DS-078) is installed exactly once, inside router context.
 function RootComponent() {
+  // Marker for E2E: hash-link handlers (SkipLink) only exist once React has
+  // hydrated, and tests that press Enter on the skip link race that otherwise.
+  useEffect(() => {
+    document.documentElement.dataset.hydrated = "true"
+  }, [])
+
   return (
     <>
       <RouteAnnouncer />

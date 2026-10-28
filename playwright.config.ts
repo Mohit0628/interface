@@ -24,12 +24,31 @@ export default defineConfig({
       testMatch: /mobile-nav\.spec\.ts/,
     },
   ],
-  webServer: {
-    command: landingAudit
-      ? "bun run --cwd apps/web build -- --mode testnet && bun run --cwd apps/web preview -- --host 127.0.0.1 --port 3000"
-      : "bun run --cwd apps/web dev -- --host 127.0.0.1 --mode testnet",
-    url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI && !landingAudit,
-    timeout: landingAudit ? 240_000 : 120_000,
-  },
+  webServer: [
+    {
+      command: landingAudit
+        ? "bun run --cwd apps/web build -- --mode testnet && bun run --cwd apps/web preview -- --host 127.0.0.1 --port 3000"
+        : "bun run --cwd apps/web dev -- --host 127.0.0.1 --mode testnet",
+      url: "http://127.0.0.1:3000",
+      reuseExistingServer: !process.env.CI && !landingAudit,
+      timeout: landingAudit ? 240_000 : 120_000,
+    },
+    // The docs specs assert cache headers and CSP on the *production* build, so
+    // Playwright starts that build itself. Previously docs-navigation spawned it
+    // with `stdio: "ignore"`, which hid every startup failure behind a bare
+    // ECONNREFUSED; letting Playwright own it surfaces the real error.
+    // Requires `bun run --cwd apps/docs build` first (CI does this before the suite).
+    {
+      command: "node apps/docs/.output/server/index.mjs",
+      url: "http://127.0.0.1:3005",
+      env: {
+        PORT: "3005",
+        HOST: "127.0.0.1",
+        NITRO_PORT: "3005",
+        NITRO_HOST: "127.0.0.1",
+      },
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
 })

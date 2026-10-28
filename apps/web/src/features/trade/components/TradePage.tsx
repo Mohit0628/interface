@@ -99,7 +99,7 @@ export function TradePage() {
             {/* Chart */}
             <div
               id="mobile-trade-view-chart"
-              className={cn("min-h-0 min-w-0 flex-1 flex-col", mobileViewClassName("chart", mobileView))}
+              className={cn("relative min-h-0 min-w-0 flex-1 flex-col overflow-hidden", mobileViewClassName("chart", mobileView))}
             >
               <PanelErrorBoundary panel="chart">
                 <TVChart symbol={trade.toTokenAddress} onSelectToken={trade.setToTokenAddress} />

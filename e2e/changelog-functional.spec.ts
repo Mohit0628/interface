@@ -126,8 +126,9 @@ test.describe("changelog functional E2E", () => {
     await page.goto("/changelog")
     await page.waitForLoadState("networkidle")
 
-    // Click the "fixed" type badge to filter
-    const fixedBadge = page.locator("text='Fixed'")
+    // Click the "fixed" type chip in the filter bar (entry badges also read
+    // "Fixed", so scope by the chip's data-type hook).
+    const fixedBadge = page.locator('[data-type="fixed"]').first()
     await fixedBadge.click()
     await page.waitForLoadState("networkidle")
 
@@ -177,7 +178,7 @@ test.describe("changelog functional E2E", () => {
     await page.waitForLoadState("networkidle")
 
     // Find the search input (placeholder contains "Search")
-    const searchInput = page.locator("input[type='text']").first()
+    const searchInput = page.getByPlaceholder("Search...")
 
     // Type search term that matches "trigger" (in v0.4.0 entry)
     await searchInput.fill("trigger")

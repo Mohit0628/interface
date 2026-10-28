@@ -14,8 +14,10 @@ test("landing page loads with hero content", async ({ page }) => {
   // The <h1> in the Hero section is always present regardless of wallet state
   const heading = page.getByRole("heading", { level: 1 })
   await expect(heading).toBeVisible()
-  await expect(heading).toContainText("perpetual")
-  await expect(heading).toContainText("on-chain.")
+  // The hero sentence is "Trade <rotating phrase> on verified order book" —
+  // the rotating middle is animated, so assert the stable frame around it.
+  await expect(heading).toContainText("Trade")
+  await expect(heading).toContainText("on verified order book")
 
   // Primary CTA buttons
   await expect(page.getByRole("button", { name: /start trading/i })).toBeVisible()
