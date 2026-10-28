@@ -213,6 +213,7 @@ export function GalleryPage() {
       <Section title="Slider">
         <div className="max-w-sm">
           <Slider
+            aria-label="Example volume slider"
             value={sliderValue}
             onValueChange={(value) =>
               setSliderValue(Array.isArray(value) ? [...value] : [value])
@@ -363,9 +364,7 @@ export function GalleryPage() {
 
       <Section title="Tooltip">
         <Tooltip>
-          <TooltipTrigger>
-            <Button variant="outline">Hover me</Button>
-          </TooltipTrigger>
+          <TooltipTrigger render={<Button variant="outline">Hover me</Button>} />
           <TooltipContent>A tooltip, positioned automatically.</TooltipContent>
         </Tooltip>
       </Section>

@@ -50,8 +50,21 @@ export function RouteAnnouncer({
     // The heading and <title> for the new route commit after this effect, so
     // read them a frame later or the announcement describes the old page.
     return afterNextFrame(() => {
-      const label = focusMainRegion(targetId)
-      announce(label)
+      // The heading is committed a frame after the route change, and a
+      // re-render can replace it again right after we focus it — which is how
+      // focus used to end up nowhere. Retry on the following frames until the
+      // intended element actually holds focus (or we give up).
+      let attempts = 0
+      const handoff = () => {
+        const { label, focused } = focusMainRegion(targetId)
+        if (!focused && attempts < 3) {
+          attempts += 1
+          afterNextFrame(handoff)
+          return
+        }
+        announce(label)
+      }
+      handoff()
     })
   }, [pathname, targetId, announce])
 
@@ -63,7 +76,7 @@ export function RouteAnnouncer({
  * it. Prefers the page heading so a screen reader starts reading where a
  * sighted user starts looking.
  */
-function focusMainRegion(targetId: string): string {
+function focusMainRegion(targetId: string): { label: string; focused: boolean } {
   const main = document.getElementById(targetId)
   const heading = main?.querySelector<HTMLElement>("h1") ?? null
   const target = heading ?? main
@@ -79,11 +92,13 @@ function focusMainRegion(targetId: string): string {
     target.focus({ preventScroll: true })
   }
 
-  return (
-    heading?.textContent.trim() ||
-    document.title.trim() ||
-    "New page"
-  )
+  return {
+    label:
+      heading?.textContent.trim() ||
+      document.title.trim() ||
+      "New page",
+    focused: Boolean(target) && document.activeElement === target,
+  }
 }
 
 /** rAF where it exists (browsers, jsdom in visual mode), a task otherwise. */

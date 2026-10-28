@@ -33,14 +33,17 @@ const VIEWPORTS = {
 const THEMES = ["light", "dark"] as const
 const DIRECTIONS = ["ltr", "rtl"] as const
 
+// `ready` is what proves the route has painted real content. The trade
+// workspace has no <h1> (its heading lives in the navbar), so it waits on the
+// ticket's tablist instead of a heading.
 const ROUTES = [
-  { name: "gallery", path: "/gallery" },
-  { name: "landing", path: "/" },
-  { name: "trade", path: "/trade" },
-  { name: "pools", path: "/pools" },
-  { name: "earn", path: "/earn" },
-  { name: "referrals", path: "/referrals" },
-  { name: "faucet", path: "/faucet" },
+  { name: "gallery", path: "/gallery", ready: "h1" },
+  { name: "landing", path: "/", ready: "h1" },
+  { name: "trade", path: "/trade", ready: '[data-slot="app-shell-content"]' },
+  { name: "pools", path: "/pools", ready: "h1" },
+  { name: "earn", path: "/earn", ready: "h1" },
+  { name: "referrals", path: "/referrals", ready: "h1" },
+  { name: "faucet", path: "/faucet", ready: "h1" },
 ] as const
 
 async function stubExternalNetwork(page: Page) {
@@ -57,15 +60,11 @@ async function stubExternalNetwork(page: Page) {
 for (const theme of THEMES) {
   for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
     test.describe(`${theme} theme, ${viewportName}`, () => {
-      // reducedMotion: "reduce" *should* stop JS-timer-driven animations
-      // that `animations: "disabled"` can't freeze (e.g. the landing
-      // hero's word-rotation interval and the community marquee), but
-      // this Chrome Headless Shell build doesn't reflect it in
-      // matchMedia() or CSS @media queries (verified: both read false
-      // even with this set) — kept anyway as the semantically correct
-      // setting for engines that do honor it. The actual freeze comes
-      // from page.clock below, which stops those timers from ever firing
-      // by fixing the clock before any script runs.
+      // reducedMotion: "reduce" is the semantically correct setting for the
+      // timer-driven animations `animations: "disabled"` can't freeze (the
+      // landing hero's word rotation, the community marquee). The fake clock
+      // this spec used to install for that is gone: it froze time for the
+      // whole page, so every data-backed route stayed on its loading spinner.
       test.use({ viewport, reducedMotion: "reduce" })
 
       test.beforeEach(async ({ page }) => {
@@ -73,14 +72,15 @@ for (const theme of THEMES) {
         await page.addInitScript((t) => {
           window.localStorage.setItem("so4-theme", t)
         }, theme)
-        await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") })
-        await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"))
       })
 
       for (const route of ROUTES) {
         test(`${route.name}`, async ({ page }) => {
           await page.goto(route.path)
           await page.waitForLoadState("networkidle")
+          // Data-backed routes render a spinner until their query resolves, so
+          // wait for the route's own content before capturing.
+          await expect(page.locator(route.ready).first()).toBeVisible()
 
           await expect(page).toHaveScreenshot(`${route.name}-${theme}-${viewportName}.png`, {
             fullPage: true,

@@ -1,0 +1,59 @@
+name: E2E Baselines
+
+# Regenerates Playwright screenshot baselines on the platform the suite runs on
+# (ubuntu-latest, chromium). Visual-regression PNGs are platform-specific, so
+# they cannot be produced on a developer machine and committed by hand.
+#
+# Dispatch this workflow, then commit the PNGs from its `e2e-snapshots`
+# artefact. Review the diff before committing: a baseline change is the only
+# signal that a visual change was unintended.
+on:
+  workflow_dispatch:
+    inputs:
+      specs:
+        description: "Spec file filters (space separated, omit for all visual specs)"
+        required: false
+        default: "docs-visual design-system-visual trade-workspace-visual changelog-visual landing-responsive"
+
+jobs:
+  baselines:
+    name: Refresh screenshot baselines
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      # The docs specs run against the docs production build (port 3005).
+      - name: Build docs for the docs E2E server
+        run: bun run --cwd apps/docs build
+
+      # Functional specs cannot pass while baselines are missing; only the
+      # screenshots matter here, so failures are tolerated.
+      - name: Write baselines
+        run: |
+          bunx playwright test --update-snapshots ${{ inputs.specs }} || true
+
+      - name: Upload baselines
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-snapshots
+          path: e2e/**/*-snapshots/**
+          retention-days: 7
+          if-no-files-found: warn

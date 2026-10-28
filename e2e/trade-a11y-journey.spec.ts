@@ -71,7 +71,7 @@ test.describe("trade accessibility journey", () => {
     // Market selector: open, Escape restores focus to trigger.
     const marketTrigger = page.getByRole("button", { name: /BTC\/USD|Select Market/i }).first()
     await marketTrigger.click()
-    await expect(page.getByRole("listbox").or(page.getByLabel(/search markets/i))).toBeVisible()
+    await expect(page.getByRole("listbox").or(page.getByLabel(/search markets/i)).first()).toBeVisible()
     await page.keyboard.press("Escape")
     await expect(marketTrigger).toBeFocused()
 
@@ -117,6 +117,10 @@ test.describe("trade accessibility journey", () => {
       await page.keyboard.press("Escape")
     }
 
+    // Narrow viewports stack the trading regions behind the panel switcher.
+    if ((page.viewportSize()?.width ?? 1280) < 768) {
+      await page.getByRole("tab", { name: "Trade", exact: true }).click()
+    }
     await expect(page.getByRole("tab", { name: "Long" })).toBeVisible()
     const serious = await runAxeSerious(page)
     expect(serious).toEqual([])

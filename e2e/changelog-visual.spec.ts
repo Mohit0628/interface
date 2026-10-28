@@ -20,8 +20,8 @@ const changelogFixture = JSON.parse(
 //   byte-identical between runs. The same fixture backs the unit tests.
 // - Theme is set via an init script, matching the app's THEME_SCRIPT approach
 //   in __root.tsx — no flash of wrong theme lands in a screenshot.
-// - The clock is frozen before any page script runs so relative timestamps
-//   and animations can never drift.
+// - No fake clock: freezing time stops the changelog fetch from ever
+//   resolving, which rendered the error boundary instead of the page.
 // - Third-party data sources are stubbed with the same pattern as
 //   design-system-visual.spec.ts; nothing meaningful on this page is masked.
 //
@@ -77,11 +77,11 @@ for (const theme of THEMES) {
           await page.addInitScript((t) => {
             window.localStorage.setItem("so4-theme", t)
           }, theme)
-          await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") })
-          await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"))
 
           await page.goto(state.path)
           await page.waitForLoadState("networkidle")
+          // Wait for the fetched release list before capturing.
+          await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible()
 
           await expect(page).toHaveScreenshot(
             `changelog-${state.name}-${theme}-${viewportName}.png`,

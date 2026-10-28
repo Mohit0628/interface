@@ -25,7 +25,14 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Audit locked dependencies
-        run: bun audit --audit-level=high
+        # GHSA-mrhx-c7xc-m3w5 (zod < 4.6.6) is a recorded exception, not a fix.
+        # The only remedy is zod 4, and forcing it onto the zod-3-only consumers
+        # breaks them for real: @pythnetwork/hermes-client (zodios, the runtime
+        # price oracle) loses its inferred types and @modelcontextprotocol/sdk
+        # throws `def._def.defaultValue is not a function` during the indexer
+        # build. Every other high advisory is fixed in the lockfile.
+        # Revisit when those packages publish zod-4 support.
+        run: bun audit --audit-level=high --ignore=GHSA-mrhx-c7xc-m3w5
 
   ci:
     name: Lint · Typecheck · Build
@@ -117,8 +124,33 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
 
+      # e2e/docs-navigation.spec.ts spawns the docs production server itself
+      # (apps/docs/.output/server/index.mjs) and waits on 127.0.0.1:3005, so
+      # the build output has to exist before the suite runs.
+      - name: Build docs for the docs E2E server
+        run: bun run --cwd apps/docs build
+
       - name: Run Playwright tests
         run: bun run test:e2e
+
+      # Baseline regeneration, driven by the E2E_UPDATE_SNAPSHOTS repository
+      # variable. Screenshot baselines are platform-specific (chromium-linux),
+      # so they can only be produced here; the artefact carries the PNGs that
+      # then get committed. Also available as a manual workflow
+      # (.github/workflows/e2e-baselines.yml) once it is on the default branch.
+      - name: Rewrite screenshot baselines
+        if: ${{ always() && vars.E2E_UPDATE_SNAPSHOTS == 'true' }}
+        run: |
+          bunx playwright test --update-snapshots docs-visual design-system-visual trade-workspace-visual changelog-visual landing-responsive || true
+
+      - name: Upload screenshot baselines
+        if: ${{ always() && vars.E2E_UPDATE_SNAPSHOTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-snapshots
+          path: e2e/**/*-snapshots/**
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

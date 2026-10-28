@@ -127,11 +127,7 @@ export function FaucetPage() {
       maxWidth="2xl"
     >
       <PageHeader
-        title={
-          <div className="flex items-center gap-3">
-            <span>Testnet Faucet</span>
-          </div>
-        }
+        title="Testnet Faucet"
         description="Claim test tokens to try trading on SO4. Tokens have no real value."
         metadata={
           <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-0.5 text-11 font-medium text-yellow-600 dark:text-yellow-400">

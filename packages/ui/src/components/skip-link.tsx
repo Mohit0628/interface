@@ -43,12 +43,16 @@ function SkipLink({
 }: SkipLinkProps) {
   function handleClick(event: React.MouseEvent<HTMLAnchorElement>) {
     onClick?.(event)
-    if (event.defaultPrevented) return
 
     const target = document.getElementById(targetId)
     // No target on this page — fall through to the browser's own hash jump.
     if (!target) return
 
+    // Claim the default even when a router-level handler already prevented it:
+    // bailing out on `event.defaultPrevented` left the skip link doing nothing
+    // at all — no focus move and no jump. Propagation is left alone so
+    // document-level listeners (and the unit test that asserts on them) still
+    // observe the event.
     event.preventDefault()
 
     if (!target.hasAttribute("tabindex")) {
@@ -68,10 +72,10 @@ function SkipLink({
       href={`#${targetId}`}
       onClick={handleClick}
       className={cn(
-        "sr-only rounded-md border border-border bg-surface-raised px-4 py-2 text-sm font-medium text-foreground shadow-md",
+        "sr-only rounded-md border border-border bg-surface-raised text-sm font-medium text-foreground shadow-md",
         // `sr-only` is already absolute; focus only has to undo the clipping
         // and pin the link somewhere visible above the sticky navbar.
-        "focus:fixed focus:top-4 focus:left-4 focus:z-100 focus:m-0 focus:size-auto focus:overflow-visible focus:whitespace-nowrap focus:[clip:auto] focus:[clip-path:none]",
+        "focus:fixed focus:top-4 focus:left-4 focus:z-100 focus:m-0 focus:size-auto focus:overflow-visible focus:whitespace-nowrap focus:[clip:auto] focus:[clip-path:none] focus:px-4 focus:py-2",
         "focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background focus:outline-none",
         className
       )}

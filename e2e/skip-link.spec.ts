@@ -7,8 +7,15 @@ import { expect, test } from "@playwright/test"
 
 const MAIN = "#main-content"
 
+/** The skip link's click handler is React-only, so hash navigation behaves
+ *  natively until hydration finishes. Wait for the app's marker first. */
+async function gotoHydrated(page: import("@playwright/test").Page, path: string) {
+  await page.goto(path)
+  await page.waitForFunction(() => document.documentElement.dataset.hydrated === "true")
+}
+
 test("skip link is the first tab stop and becomes visible on focus", async ({ page }) => {
-  await page.goto("/pools")
+  await gotoHydrated(page, "/pools")
 
   const skipLink = page.getByRole("link", { name: "Skip to main content" })
   await expect(skipLink).toBeAttached()
@@ -29,7 +36,7 @@ test("skip link is the first tab stop and becomes visible on focus", async ({ pa
 test("activating the skip link focuses the main region without touching the URL", async ({
   page,
 }) => {
-  await page.goto("/pools")
+  await gotoHydrated(page, "/pools")
   const url = page.url()
 
   await page.keyboard.press("Tab")
@@ -51,7 +58,7 @@ test("activating the skip link focuses the main region without touching the URL"
 test("route navigation moves focus to the new page heading and announces it", async ({
   page,
 }) => {
-  await page.goto("/pools")
+  await gotoHydrated(page, "/pools")
   await expect(page.getByRole("heading", { level: 1, name: /pools/i })).toBeVisible()
 
   await page.getByRole("link", { name: "Earn", exact: true }).first().click()
@@ -69,7 +76,7 @@ test("route navigation moves focus to the new page heading and announces it", as
 test("pointer navigation does not draw a focus ring on the new page", async ({
   page,
 }) => {
-  await page.goto("/pools")
+  await gotoHydrated(page, "/pools")
 
   await page.getByRole("link", { name: "Referrals", exact: true }).first().click()
   await expect(page.getByRole("heading", { level: 1, name: /referrals/i })).toBeFocused()

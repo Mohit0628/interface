@@ -24,6 +24,12 @@ import type { Page } from "@playwright/test"
 //   bun run test:e2e -- docs-visual --update-snapshots
 // and review the resulting snapshots in your pull request.
 
+const DOCS_BASE_URL = "http://127.0.0.1:3005"
+
+// These states are docs routes (/developers/architecture, /concepts/risk, …), so
+// they must be captured from the docs app rather than the web app's baseURL.
+test.use({ baseURL: DOCS_BASE_URL })
+
 const VIEWPORTS = {
   desktop: { width: 1280, height: 800 },
   mobile: { width: 390, height: 844 },
